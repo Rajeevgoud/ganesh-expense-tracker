@@ -18,15 +18,12 @@ function Login({ onLogin }) {
       });
 
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.data.user)
-      );
+      localStorage.setItem("user", JSON.stringify(response.data.user));
 
       onLogin(response.data.user);
     } catch (error) {
       setMessage(
-        error.response?.data?.message || "Login failed"
+        error.response?.data?.message || "Login failed. Please try again."
       );
     }
   };
