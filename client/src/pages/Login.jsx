@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 
-function Login({ onLogin }) {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+
+  const navigate = useNavigate();
 
   const login = async (e) => {
     e.preventDefault();
@@ -17,13 +20,22 @@ function Login({ onLogin }) {
         password: password,
       });
 
+      // Save login details permanently in browser storage
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      );
 
-      onLogin(response.data.user);
+      // Go to admin page after successful login
+      navigate("/admin");
+
     } catch (error) {
+      console.error(error);
+
       setMessage(
-        error.response?.data?.message || "Login failed. Please try again."
+        error.response?.data?.message ||
+        "Login failed. Please try again."
       );
     }
   };
@@ -34,6 +46,7 @@ function Login({ onLogin }) {
 
       <form onSubmit={login}>
         <label>Username</label>
+
         <input
           type="text"
           value={email}
@@ -43,6 +56,7 @@ function Login({ onLogin }) {
         />
 
         <label>Password</label>
+
         <input
           type="password"
           value={password}
@@ -51,9 +65,15 @@ function Login({ onLogin }) {
           required
         />
 
-        {message && <p className="error">{message}</p>}
+        {message && (
+          <p className="error">
+            {message}
+          </p>
+        )}
 
-        <button type="submit">Login</button>
+        <button type="submit">
+          Login
+        </button>
       </form>
     </div>
   );
