@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { api } from "../api";
 
 function Login({ onLogin }) {
@@ -18,13 +18,12 @@ function Login({ onLogin }) {
       });
 
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      );
 
-      setMessage("Login successful");
-
-      if (onLogin) {
-        onLogin(response.data.user);
-      }
+      onLogin(response.data.user);
     } catch (error) {
       setMessage(
         error.response?.data?.message || "Login failed"
@@ -34,11 +33,10 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-container">
-      <h2>Admin Login</h2>
+      <h1>Admin Login</h1>
 
       <form onSubmit={login}>
         <label>Username</label>
-
         <input
           type="text"
           value={email}
@@ -48,7 +46,6 @@ function Login({ onLogin }) {
         />
 
         <label>Password</label>
-
         <input
           type="password"
           value={password}
