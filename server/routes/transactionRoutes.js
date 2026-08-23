@@ -4,7 +4,6 @@ const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-
 // ==========================================
 // PUBLIC - GET ALL TRANSACTIONS
 // ==========================================
@@ -24,10 +23,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-
 // ==========================================
 // PUBLIC - GET TRANSACTION SUMMARY
-// IMPORTANT: Keep this BEFORE "/:id" routes
 // ==========================================
 router.get("/summary", async (req, res) => {
   try {
@@ -55,13 +52,18 @@ router.get("/summary", async (req, res) => {
   }
 });
 
-
 // ==========================================
 // ADMIN - ADD TRANSACTION
 // ==========================================
 router.post("/", protect, async (req, res) => {
   try {
-    const { type, title, amount, description } = req.body;
+    const {
+      type,
+      title,
+      amount,
+      description,
+      spentBy,
+    } = req.body;
 
     if (!type || !title || amount === undefined || amount === "") {
       return res.status(400).json({
@@ -75,17 +77,26 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
+    // Expense must have a person selected
+    if (type === "expense" && !spentBy) {
+      return res.status(400).json({
+        message: "Please select who spent the money",
+      });
+    }
+
     const transaction = await Transaction.create({
       type,
       title,
       amount: Number(amount),
       description: description || "",
 
-      // Logged-in admin ID
+      // SAVE SPENT BY
+      spentBy: type === "expense" ? spentBy : "",
+
+      // Logged-in admin
       addedBy: req.user.id,
     });
 
-    // Return transaction with admin name
     const populatedTransaction = await transaction.populate(
       "addedBy",
       "name"
@@ -101,13 +112,18 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-
 // ==========================================
 // ADMIN - UPDATE TRANSACTION
 // ==========================================
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { type, title, amount, description } = req.body;
+    const {
+      type,
+      title,
+      amount,
+      description,
+      spentBy,
+    } = req.body;
 
     const transaction = await Transaction.findById(req.params.id);
 
@@ -139,9 +155,21 @@ router.put("/:id", protect, async (req, res) => {
       transaction.description = description;
     }
 
+    // UPDATE SPENT BY
+    if (transaction.type === "expense") {
+      if (!spentBy) {
+        return res.status(400).json({
+          message: "Please select who spent the money",
+        });
+      }
+
+      transaction.spentBy = spentBy;
+    } else {
+      transaction.spentBy = "";
+    }
+
     await transaction.save();
 
-    // Return updated transaction with admin name
     const updatedTransaction = await transaction.populate(
       "addedBy",
       "name"
@@ -156,7 +184,6 @@ router.put("/:id", protect, async (req, res) => {
     });
   }
 });
-
 
 // ==========================================
 // ADMIN - DELETE TRANSACTION
@@ -184,6 +211,5 @@ router.delete("/:id", protect, async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;
