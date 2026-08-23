@@ -11,6 +11,21 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // All festival members
+  const members = [
+    "Rajeev",
+    "Akhilesh",
+    "Akhil",
+    "Varun",
+    "Sreedhar",
+    "Bhaskar",
+    "Mani",
+    "Bunny",
+    "Adarsh",
+    "Deepak",
+    "Sai",
+  ];
+
   const fetchData = useCallback(async () => {
     try {
       const [summaryRes, transactionRes] = await Promise.all([
@@ -35,24 +50,26 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Calculate total amount spent by each person
-  const spendingSummary = transactions
+  // Start every member with ₹0
+  const spendingSummary = members.reduce((totals, member) => {
+    totals[member] = 0;
+    return totals;
+  }, {});
+
+  // Add expense amounts to the correct person's total
+  transactions
     .filter(
       (item) =>
         item.type === "expense" &&
         item.spentBy
     )
-    .reduce((totals, item) => {
+    .forEach((item) => {
       const person = item.spentBy;
 
-      if (!totals[person]) {
-        totals[person] = 0;
+      if (spendingSummary[person] !== undefined) {
+        spendingSummary[person] += Number(item.amount || 0);
       }
-
-      totals[person] += Number(item.amount);
-
-      return totals;
-    }, {});
+    });
 
   return (
     <div>
@@ -65,6 +82,7 @@ export default function Dashboard() {
         </p>
       </section>
 
+      {/* Summary Cards */}
       <section className="cards">
         <div className="card">
           <span>Total Collected</span>
@@ -88,6 +106,7 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* Transaction History */}
       <section className="panel">
         <h2>Transaction History</h2>
 
@@ -131,7 +150,9 @@ export default function Dashboard() {
                       <td>{item.title}</td>
 
                       <td>
-                        ₹{Number(item.amount).toLocaleString("en-IN")}
+                        ₹{Number(item.amount || 0).toLocaleString(
+                          "en-IN"
+                        )}
                       </td>
 
                       <td>
@@ -162,51 +183,48 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Person-wise spending summary */}
+      {/* Person-wise Spending Summary */}
       <section className="panel">
         <h2>👥 Person-wise Spending Summary</h2>
 
-        {Object.keys(spendingSummary).length === 0 ? (
-          <p>No person-wise expense details available yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Person</th>
-                  <th>Total Spent</th>
-                </tr>
-              </thead>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Person</th>
+                <th>Total Spent</th>
+              </tr>
+            </thead>
 
-              <tbody>
-                {Object.entries(spendingSummary)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([person, amount]) => (
-                    <tr key={person}>
-                      <td>{person}</td>
-                      <td>
-                        ₹{Number(amount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  ))}
-
-                <tr>
-                  <td>
-                    <strong>Total</strong>
-                  </td>
+            <tbody>
+              {members.map((person) => (
+                <tr key={person}>
+                  <td>{person}</td>
 
                   <td>
-                    <strong>
-                      ₹{Number(summary.totalExpense || 0).toLocaleString(
-                        "en-IN"
-                      )}
-                    </strong>
+                    ₹{Number(
+                      spendingSummary[person] || 0
+                    ).toLocaleString("en-IN")}
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+
+              <tr>
+                <td>
+                  <strong>Total</strong>
+                </td>
+
+                <td>
+                  <strong>
+                    ₹{Number(
+                      summary.totalExpense || 0
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );
