@@ -23,6 +23,13 @@ const transactionSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Person who actually spent the money
+    spentBy: {
+      type: String,
+      default: "",
+    },
+
+    // Admin who entered this transaction
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
