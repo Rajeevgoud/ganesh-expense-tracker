@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // All festival members
+  // All members - everyone will always be shown
   const members = [
     "Rajeev",
     "Akhilesh",
@@ -36,7 +36,7 @@ export default function Dashboard() {
       setSummary(summaryRes.data);
       setTransactions(transactionRes.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error loading dashboard:", error);
     } finally {
       setLoading(false);
     }
@@ -45,44 +45,52 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
 
+    // Refresh automatically every 5 seconds
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
   }, [fetchData]);
 
   // Start every member with ₹0
-  const spendingSummary = members.reduce((totals, member) => {
-    totals[member] = 0;
+  const spendingSummary = members.reduce((totals, person) => {
+    totals[person] = 0;
     return totals;
   }, {});
 
-  // Add expense amounts to the correct person's total
-  transactions
-    .filter(
-      (item) =>
-        item.type === "expense" &&
-        item.spentBy
-    )
-    .forEach((item) => {
-      const person = item.spentBy;
+  // Add every expense to the person who spent it
+  transactions.forEach((item) => {
+    if (item.type === "expense" && item.spentBy) {
+      const person = item.spentBy.trim();
 
-      if (spendingSummary[person] !== undefined) {
-        spendingSummary[person] += Number(item.amount || 0);
+      // Match member names without case sensitivity
+      const memberName = members.find(
+        (member) => member.toLowerCase() === person.toLowerCase()
+      );
+
+      if (memberName) {
+        spendingSummary[memberName] += Number(item.amount || 0);
       }
-    });
+    }
+  });
+
+  // Total of person-wise spending
+  const personWiseTotal = Object.values(spendingSummary).reduce(
+    (total, amount) => total + amount,
+    0
+  );
 
   return (
     <div>
+      {/* HERO */}
       <section className="hero">
         <h1>🙏 Ganesh Festival Expense Tracker</h1>
 
         <p>
-          Transparent festival money and expense tracking
-          for everyone.
+          Transparent festival money and expense tracking for everyone.
         </p>
       </section>
 
-      {/* Summary Cards */}
+      {/* SUMMARY CARDS */}
       <section className="cards">
         <div className="card">
           <span>Total Collected</span>
@@ -106,7 +114,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Transaction History */}
+      {/* TRANSACTION HISTORY */}
       <section className="panel">
         <h2>Transaction History</h2>
 
@@ -130,17 +138,13 @@ export default function Dashboard() {
               <tbody>
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7">
-                      No transactions yet.
-                    </td>
+                    <td colSpan="7">No transactions yet.</td>
                   </tr>
                 ) : (
                   transactions.map((item) => (
                     <tr key={item._id}>
                       <td>
-                        <span
-                          className={`badge ${item.type}`}
-                        >
+                        <span className={`badge ${item.type}`}>
                           {item.type === "income"
                             ? "Money Added"
                             : "Money Spent"}
@@ -150,9 +154,7 @@ export default function Dashboard() {
                       <td>{item.title}</td>
 
                       <td>
-                        ₹{Number(item.amount || 0).toLocaleString(
-                          "en-IN"
-                        )}
+                        ₹{Number(item.amount || 0).toLocaleString("en-IN")}
                       </td>
 
                       <td>
@@ -161,19 +163,15 @@ export default function Dashboard() {
                           : "-"}
                       </td>
 
-                      <td>
-                        {item.addedBy?.name || "Unknown"}
-                      </td>
+                      <td>{item.addedBy?.name || "Unknown"}</td>
 
                       <td>
-                        {new Date(
-                          item.createdAt
-                        ).toLocaleString()}
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleString()
+                          : "-"}
                       </td>
 
-                      <td>
-                        {item.description || "-"}
-                      </td>
+                      <td>{item.description || "-"}</td>
                     </tr>
                   ))
                 )}
@@ -183,7 +181,7 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Person-wise Spending Summary */}
+      {/* PERSON-WISE SPENDING SUMMARY */}
       <section className="panel">
         <h2>👥 Person-wise Spending Summary</h2>
 
@@ -216,15 +214,21 @@ export default function Dashboard() {
 
                 <td>
                   <strong>
-                    ₹{Number(
-                      summary.totalExpense || 0
-                    ).toLocaleString("en-IN")}
+                    ₹{Number(personWiseTotal).toLocaleString("en-IN")}
                   </strong>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        {personWiseTotal !== Number(summary.totalExpense || 0) && (
+          <p style={{ marginTop: "15px" }}>
+            Note: Some old expenses may have <strong>Spent By</strong> set to
+            "Not specified". Edit those transactions in the Admin Panel and
+            select the correct person.
+          </p>
+        )}
       </section>
     </div>
   );
