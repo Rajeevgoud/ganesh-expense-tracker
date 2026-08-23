@@ -5,26 +5,33 @@ const transactionSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["income", "expense"],
-      required: true
+      required: true,
     },
+
     title: {
       type: String,
-      required: true
+      required: true,
     },
+
     amount: {
       type: Number,
-      required: true
+      required: true,
     },
+
     description: {
-      type: String
+      type: String,
+      default: "",
     },
+
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
-    }
+      required: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model("Transaction", transactionSchema);
