@@ -20,7 +20,19 @@ export default function Admin() {
   const [message, setMessage] = useState("");
 
   // Change these names to your actual members
-  const members = ["Rajeev", "Ramu", "Deepak", "Sai"];
+  const members = [
+    "Rajeev",
+    "Akhilesh",
+    "Akhil",
+    "Varun",
+    "Sreedhar",
+    "Bhaskar",
+    "Mani",
+    "Bunny",
+    "Adarsh",
+    "Deepak",
+    "Sai",
+  ];
 
   const loadTransactions = async () => {
     try {
