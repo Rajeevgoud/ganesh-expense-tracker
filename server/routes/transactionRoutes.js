@@ -5,9 +5,9 @@ const protect = require("../middleware/authMiddleware");
 const router = express.Router();
 
 
-// =====================================================
-// GET ALL TRANSACTIONS
-// =====================================================
+// ==========================================
+// PUBLIC - GET ALL TRANSACTIONS
+// ==========================================
 
 router.get("/", async (req, res) => {
   try {
@@ -27,95 +27,248 @@ router.get("/", async (req, res) => {
 });
 
 
-// =====================================================
-// GET SUMMARY
-// =====================================================
+// ==========================================
+// PUBLIC - GET SUMMARY
+// ==========================================
 
 router.get("/summary", async (req, res) => {
   try {
     const transactions = await Transaction.find();
 
     const totalIncome = transactions
-      .filter(
-        (item) => item.type === "income"
-      )
+      .filter((item) => item.type === "income")
       .reduce(
-        (sum, item) =>
-          sum + Number(item.amount || 0),
+        (sum, item) => sum + Number(item.amount),
         0
       );
 
     const totalExpense = transactions
-      .filter(
-        (item) => item.type === "expense"
-      )
+      .filter((item) => item.type === "expense")
       .reduce(
-        (sum, item) =>
-          sum + Number(item.amount || 0),
+        (sum, item) => sum + Number(item.amount),
         0
       );
 
-    const totalPending = transactions
-      .filter(
-        (item) => item.type === "pending"
-      )
+    const pendingDonations = transactions
+      .filter((item) => item.type === "pending")
       .reduce(
-        (sum, item) =>
-          sum + Number(item.amount || 0),
+        (sum, item) => sum + Number(item.amount),
         0
       );
 
     res.status(200).json({
       totalIncome,
       totalExpense,
-      totalPending,
-      balance:
-        totalIncome - totalExpense,
+      pendingDonations,
+      balance: totalIncome - totalExpense,
     });
   } catch (error) {
+    console.error("Get summary error:", error);
+
+    res.status(500).json({
+      message:
+        error.message || "Unable to get summary",
+    });
+  }
+});
+
+
+// ==========================================
+// ADMIN - ADD TRANSACTION
+// ==========================================
+
+router.post("/", protect, async (req, res) => {
+  try {
+    const {
+      type,
+      title,
+      amount,
+      description,
+      spentBy,
+      donorName,
+    } = req.body;
+
+
+    // ----------------------------------------
+    // BASIC VALIDATION
+    // ----------------------------------------
+
+    if (
+      !type ||
+      amount === undefined ||
+      amount === ""
+    ) {
+      return res.status(400).json({
+        message: "Type and amount are required",
+      });
+    }
+
+
+    // ----------------------------------------
+    // VALID TYPE
+    // ----------------------------------------
+
+    if (
+      !["income", "expense", "pending"].includes(
+        type
+      )
+    ) {
+      return res.status(400).json({
+        message:
+          "Type must be income, expense or pending",
+      });
+    }
+
+
+    // ----------------------------------------
+    // EXPENSE
+    // ----------------------------------------
+
+    if (type === "expense") {
+      if (!title || !title.trim()) {
+        return res.status(400).json({
+          message: "Purpose is required",
+        });
+      }
+
+      if (!spentBy || !spentBy.trim()) {
+        return res.status(400).json({
+          message:
+            "Please select who spent the money",
+        });
+      }
+    }
+
+
+    // ----------------------------------------
+    // INCOME
+    // ----------------------------------------
+
+    if (type === "income") {
+      if (!donorName || !donorName.trim()) {
+        return res.status(400).json({
+          message:
+            "Please enter the person name",
+        });
+      }
+    }
+
+
+    // ----------------------------------------
+    // PENDING DONATION
+    // ----------------------------------------
+
+    if (type === "pending") {
+      if (!donorName || !donorName.trim()) {
+        return res.status(400).json({
+          message:
+            "Please enter the donor name",
+        });
+      }
+    }
+
+
+    // ----------------------------------------
+    // CREATE TRANSACTION
+    // ----------------------------------------
+
+    const transaction =
+      await Transaction.create({
+        type,
+
+        title:
+          type === "expense"
+            ? title.trim()
+            : donorName.trim(),
+
+        amount: Number(amount),
+
+        description:
+          description || "",
+
+        spentBy:
+          type === "expense"
+            ? spentBy.trim()
+            : "",
+
+        donorName:
+          type === "income" ||
+          type === "pending"
+            ? donorName.trim()
+            : "",
+
+        addedBy: req.user.id,
+      });
+
+
+    // ----------------------------------------
+    // POPULATE ADMIN
+    // ----------------------------------------
+
+    const populatedTransaction =
+      await transaction.populate(
+        "addedBy",
+        "name"
+      );
+
+
+    res.status(201).json(
+      populatedTransaction
+    );
+
+  } catch (error) {
     console.error(
-      "Get summary error:",
+      "Add transaction error:",
       error
     );
 
     res.status(500).json({
       message:
         error.message ||
-        "Unable to get summary",
+        "Unable to add transaction",
     });
   }
 });
 
 
-// =====================================================
-// ADD TRANSACTION
-// =====================================================
+// ==========================================
+// ADMIN - UPDATE TRANSACTION
+// ==========================================
 
-router.post(
-  "/",
-  protect,
-  async (req, res) => {
-    try {
-      const {
-        type,
-        title,
-        amount,
-        description,
-        spentBy,
-        donorName,
-      } = req.body;
+router.put("/:id", protect, async (req, res) => {
+  try {
+    const {
+      type,
+      title,
+      amount,
+      description,
+      spentBy,
+      donorName,
+    } = req.body;
 
 
-      // -----------------------------------------------
-      // TYPE VALIDATION
-      // -----------------------------------------------
+    const transaction =
+      await Transaction.findById(
+        req.params.id
+      );
 
+
+    if (!transaction) {
+      return res.status(404).json({
+        message: "Transaction not found",
+      });
+    }
+
+
+    // ----------------------------------------
+    // TYPE
+    // ----------------------------------------
+
+    if (type !== undefined) {
       if (
-        ![
-          "income",
-          "expense",
-          "pending",
-        ].includes(type)
+        !["income", "expense", "pending"].includes(
+          type
+        )
       ) {
         return res.status(400).json({
           message:
@@ -123,355 +276,156 @@ router.post(
         });
       }
 
+      transaction.type = type;
+    }
 
-      // -----------------------------------------------
-      // AMOUNT VALIDATION
-      // -----------------------------------------------
+
+    // ----------------------------------------
+    // AMOUNT
+    // ----------------------------------------
+
+    if (
+      amount !== undefined &&
+      amount !== ""
+    ) {
+      transaction.amount =
+        Number(amount);
+    }
+
+
+    // ----------------------------------------
+    // DESCRIPTION
+    // ----------------------------------------
+
+    if (description !== undefined) {
+      transaction.description =
+        description;
+    }
+
+
+    // ----------------------------------------
+    // EXPENSE
+    // ----------------------------------------
+
+    if (transaction.type === "expense") {
+
+      if (!title || !title.trim()) {
+        return res.status(400).json({
+          message: "Purpose is required",
+        });
+      }
+
+      if (!spentBy || !spentBy.trim()) {
+        return res.status(400).json({
+          message:
+            "Please select who spent the money",
+        });
+      }
+
+      transaction.title =
+        title.trim();
+
+      transaction.spentBy =
+        spentBy.trim();
+
+      transaction.donorName = "";
+    }
+
+
+    // ----------------------------------------
+    // INCOME
+    // ----------------------------------------
+
+    else if (
+      transaction.type === "income"
+    ) {
 
       if (
-        amount === undefined ||
-        amount === ""
+        !donorName ||
+        !donorName.trim()
       ) {
         return res.status(400).json({
           message:
-            "Amount is required",
+            "Please enter the person name",
         });
       }
 
+      transaction.title =
+        donorName.trim();
 
-      // -----------------------------------------------
-      // EXPENSE
-      // -----------------------------------------------
+      transaction.donorName =
+        donorName.trim();
 
-      if (type === "expense") {
-
-        if (!title) {
-          return res.status(400).json({
-            message:
-              "Purpose is required",
-          });
-        }
-
-        if (!spentBy) {
-          return res.status(400).json({
-            message:
-              "Please select who spent the money",
-          });
-        }
-      }
-
-
-      // -----------------------------------------------
-      // INCOME
-      // -----------------------------------------------
-
-      if (type === "income") {
-
-        if (!title) {
-          return res.status(400).json({
-            message:
-              "Purpose is required",
-          });
-        }
-      }
-
-
-      // -----------------------------------------------
-      // PENDING DONATION
-      // -----------------------------------------------
-
-      if (type === "pending") {
-
-        if (!donorName) {
-          return res.status(400).json({
-            message:
-              "Please select donor name",
-          });
-        }
-      }
-
-
-      // -----------------------------------------------
-      // CREATE
-      // -----------------------------------------------
-
-      const transaction =
-        await Transaction.create({
-
-          type,
-
-          // Pending donations don't need purpose
-          title:
-            type === "pending"
-              ? "Pending Donation"
-              : title,
-
-          amount:
-            Number(amount),
-
-          description:
-            description || "",
-
-          spentBy:
-            type === "expense"
-              ? spentBy
-              : "",
-
-          donorName:
-            type === "pending"
-              ? donorName
-              : "",
-
-          addedBy:
-            req.user.id,
-        });
-
-
-      // -----------------------------------------------
-      // POPULATE ADMIN
-      // -----------------------------------------------
-
-      const populatedTransaction =
-        await transaction.populate(
-          "addedBy",
-          "name"
-        );
-
-
-      res.status(201).json(
-        populatedTransaction
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Add transaction error:",
-        error
-      );
-
-      res.status(500).json({
-        message:
-          error.message ||
-          "Unable to add transaction",
-      });
+      transaction.spentBy = "";
     }
-  }
-);
 
 
-// =====================================================
-// UPDATE TRANSACTION
-// =====================================================
+    // ----------------------------------------
+    // PENDING
+    // ----------------------------------------
 
-router.put(
-  "/:id",
-  protect,
-  async (req, res) => {
+    else if (
+      transaction.type === "pending"
+    ) {
 
-    try {
-
-      const {
-        type,
-        title,
-        amount,
-        description,
-        spentBy,
-        donorName,
-      } = req.body;
-
-
-      const transaction =
-        await Transaction.findById(
-          req.params.id
-        );
-
-
-      if (!transaction) {
-        return res.status(404).json({
+      if (
+        !donorName ||
+        !donorName.trim()
+      ) {
+        return res.status(400).json({
           message:
-            "Transaction not found",
+            "Please enter the donor name",
         });
       }
 
+      transaction.title =
+        donorName.trim();
 
-      // -----------------------------------------------
-      // TYPE
-      // -----------------------------------------------
+      transaction.donorName =
+        donorName.trim();
 
-      if (type !== undefined) {
-
-        if (
-          ![
-            "income",
-            "expense",
-            "pending",
-          ].includes(type)
-        ) {
-          return res.status(400).json({
-            message:
-              "Invalid transaction type",
-          });
-        }
-
-        transaction.type = type;
-      }
-
-
-      // -----------------------------------------------
-      // AMOUNT
-      // -----------------------------------------------
-
-      if (
-        amount !== undefined &&
-        amount !== ""
-      ) {
-        transaction.amount =
-          Number(amount);
-      }
-
-
-      // -----------------------------------------------
-      // DESCRIPTION
-      // -----------------------------------------------
-
-      if (
-        description !== undefined
-      ) {
-        transaction.description =
-          description;
-      }
-
-
-      // -----------------------------------------------
-      // EXPENSE
-      // -----------------------------------------------
-
-      if (
-        transaction.type ===
-        "expense"
-      ) {
-
-        if (!title) {
-          return res.status(400).json({
-            message:
-              "Purpose is required",
-          });
-        }
-
-        if (!spentBy) {
-          return res.status(400).json({
-            message:
-              "Please select who spent the money",
-          });
-        }
-
-        transaction.title =
-          title;
-
-        transaction.spentBy =
-          spentBy;
-
-        transaction.donorName =
-          "";
-      }
-
-
-      // -----------------------------------------------
-      // INCOME
-      // -----------------------------------------------
-
-      else if (
-        transaction.type ===
-        "income"
-      ) {
-
-        if (!title) {
-          return res.status(400).json({
-            message:
-              "Purpose is required",
-          });
-        }
-
-        transaction.title =
-          title;
-
-        transaction.spentBy =
-          "";
-
-        transaction.donorName =
-          "";
-      }
-
-
-      // -----------------------------------------------
-      // PENDING DONATION
-      // -----------------------------------------------
-
-      else if (
-        transaction.type ===
-        "pending"
-      ) {
-
-        if (!donorName) {
-          return res.status(400).json({
-            message:
-              "Please select donor name",
-          });
-        }
-
-        transaction.title =
-          "Pending Donation";
-
-        transaction.donorName =
-          donorName;
-
-        transaction.spentBy =
-          "";
-      }
-
-
-      await transaction.save();
-
-
-      const updatedTransaction =
-        await transaction.populate(
-          "addedBy",
-          "name"
-        );
-
-
-      res.status(200).json(
-        updatedTransaction
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Update transaction error:",
-        error
-      );
-
-      res.status(500).json({
-        message:
-          error.message ||
-          "Unable to update transaction",
-      });
+      transaction.spentBy = "";
     }
+
+
+    await transaction.save();
+
+
+    const updatedTransaction =
+      await transaction.populate(
+        "addedBy",
+        "name"
+      );
+
+
+    res.status(200).json(
+      updatedTransaction
+    );
+
+  } catch (error) {
+    console.error(
+      "Update transaction error:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        error.message ||
+        "Unable to update transaction",
+    });
   }
-);
+});
 
 
-// =====================================================
-// DELETE TRANSACTION
-// =====================================================
+// ==========================================
+// ADMIN - DELETE TRANSACTION
+// ==========================================
 
 router.delete(
   "/:id",
   protect,
   async (req, res) => {
-
     try {
-
       const transaction =
         await Transaction.findById(
           req.params.id
@@ -495,7 +449,6 @@ router.delete(
       });
 
     } catch (error) {
-
       console.error(
         "Delete transaction error:",
         error
