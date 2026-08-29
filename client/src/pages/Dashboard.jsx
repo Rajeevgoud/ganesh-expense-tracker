@@ -7,6 +7,9 @@ import React, {
 import { api } from "../api";
 
 export default function Dashboard() {
+  // ==========================================
+  // SUMMARY
+  // ==========================================
   const [summary, setSummary] = useState({
     totalIncome: 0,
     totalExpense: 0,
@@ -14,21 +17,30 @@ export default function Dashboard() {
     balance: 0,
   });
 
-  const [transactions, setTransactions] = useState([]);
+  // ==========================================
+  // TRANSACTIONS
+  // ==========================================
+  const [transactions, setTransactions] =
+    useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
+  // ==========================================
+  // FILTER
+  // ==========================================
   const [selectedPerson, setSelectedPerson] =
     useState("all");
 
-  // What card is currently selected
-  const [selectedDetails, setSelectedDetails] =
+  // ==========================================
+  // DETAILS CARD
+  // ==========================================
+  const [detailsType, setDetailsType] =
     useState(null);
 
-  // =====================================================
-  // MEMBERS
-  // =====================================================
-
+  // ==========================================
+  // ALL FESTIVAL MEMBERS
+  // ==========================================
   const members = [
     "Rajeev",
     "Akhilesh",
@@ -43,10 +55,9 @@ export default function Dashboard() {
     "Sai",
   ];
 
-  // =====================================================
+  // ==========================================
   // FETCH DATA
-  // =====================================================
-
+  // ==========================================
   const fetchData = useCallback(async () => {
     try {
       const [
@@ -57,10 +68,30 @@ export default function Dashboard() {
         api.get("/transactions"),
       ]);
 
-      setSummary(summaryRes.data);
+      setSummary({
+        totalIncome:
+          Number(
+            summaryRes.data.totalIncome
+          ) || 0,
+
+        totalExpense:
+          Number(
+            summaryRes.data.totalExpense
+          ) || 0,
+
+        totalPending:
+          Number(
+            summaryRes.data.totalPending
+          ) || 0,
+
+        balance:
+          Number(
+            summaryRes.data.balance
+          ) || 0,
+      });
 
       setTransactions(
-        transactionRes.data
+        transactionRes.data || []
       );
     } catch (error) {
       console.error(
@@ -72,10 +103,9 @@ export default function Dashboard() {
     }
   }, []);
 
-  // =====================================================
+  // ==========================================
   // AUTO REFRESH
-  // =====================================================
-
+  // ==========================================
   useEffect(() => {
     fetchData();
 
@@ -88,129 +118,105 @@ export default function Dashboard() {
       clearInterval(interval);
   }, [fetchData]);
 
-  // =====================================================
-  // PERSON SPENDING TOTALS
-  // =====================================================
+  // ==========================================
+  // FILTERED TRANSACTIONS
+  // ==========================================
+  const filteredTransactions =
+    transactions.filter((item) => {
+      if (selectedPerson === "all") {
+        return true;
+      }
 
-  const spendingTotals = transactions
-    .filter(
-      (item) =>
-        item.type === "expense" &&
-        item.spentBy
-    )
-    .reduce(
-      (totals, item) => {
-        const person =
-          item.spentBy;
+      // Expenses → spentBy
+      if (item.type === "expense") {
+        return (
+          (item.spentBy || "")
+            .toLowerCase() ===
+          selectedPerson.toLowerCase()
+        );
+      }
 
-        if (!totals[person]) {
-          totals[person] = 0;
+      // Income / pending → donorName
+      if (
+        item.type === "income" ||
+        item.type === "pending"
+      ) {
+        return (
+          (item.donorName || item.title || "")
+            .toLowerCase() ===
+          selectedPerson.toLowerCase()
+        );
+      }
+
+      return false;
+    });
+
+  // ==========================================
+  // TOTAL SPENT FOR SELECTED PERSON
+  // ==========================================
+  const selectedPersonSpent =
+    transactions
+      .filter((item) => {
+        if (item.type !== "expense") {
+          return false;
         }
 
-        totals[person] += Number(
-          item.amount || 0
+        if (selectedPerson === "all") {
+          return true;
+        }
+
+        return (
+          (item.spentBy || "")
+            .toLowerCase() ===
+          selectedPerson.toLowerCase()
         );
+      })
+      .reduce(
+        (sum, item) =>
+          sum + Number(item.amount || 0),
+        0
+      );
 
-        return totals;
-      },
-      {}
-    );
-
-  // =====================================================
-  // FILTERED TRANSACTIONS
-  // =====================================================
-
-  const filteredTransactions =
-    selectedPerson === "all"
-      ? transactions
-      : transactions.filter(
+  // ==========================================
+  // DETAILS
+  // ==========================================
+  const detailTransactions =
+    detailsType === "collected"
+      ? transactions.filter(
           (item) =>
-            item.type === "expense" &&
-            item.spentBy ===
-              selectedPerson
-        );
-
-  // =====================================================
-  // FILTER TOTAL
-  // =====================================================
-
-  const filteredPersonTotal =
-    selectedPerson === "all"
-      ? Number(
-          summary.totalExpense || 0
+            item.type === "income"
         )
-      : Number(
-          spendingTotals[
-            selectedPerson
-          ] || 0
-        );
-
-  // =====================================================
-  // CARD CLICK
-  // =====================================================
-
-  const showDetails = (type) => {
-    setSelectedDetails(type);
-
-    // Scroll to details
-    setTimeout(() => {
-      document
-        .getElementById(
-          "details-section"
+      : detailsType === "pending"
+      ? transactions.filter(
+          (item) =>
+            item.type === "pending"
         )
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-    }, 100);
+      : [];
+
+  // ==========================================
+  // FORMAT MONEY
+  // ==========================================
+  const money = (amount) =>
+    `₹${Number(amount || 0).toLocaleString(
+      "en-IN"
+    )}`;
+
+  // ==========================================
+  // FORMAT DATE
+  // ==========================================
+  const formatDate = (date) => {
+    if (!date) return "-";
+
+    return new Date(
+      date
+    ).toLocaleString("en-IN");
   };
-
-  // =====================================================
-  // DETAILS DATA
-  // =====================================================
-
-  const collectedTransactions =
-    transactions.filter(
-      (item) =>
-        item.type === "income"
-    );
-
-  const pendingTransactions =
-    transactions.filter(
-      (item) =>
-        item.type === "pending"
-    );
-
-  // =====================================================
-  // DETAILS TOTALS
-  // =====================================================
-
-  const collectedTotal =
-    collectedTransactions.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.amount || 0),
-      0
-    );
-
-  const pendingTotal =
-    pendingTransactions.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.amount || 0),
-      0
-    );
-
-  // =====================================================
-  // RENDER
-  // =====================================================
 
   return (
     <div>
-
-      {/* =================================================
+      {/* ======================================
           HERO
-      ================================================= */}
+      ====================================== */}
 
       <section className="hero">
         <h1>
@@ -218,25 +224,26 @@ export default function Dashboard() {
         </h1>
 
         <p>
-          Transparent festival money
-          and expense tracking for
-          everyone.
+          Transparent festival money and
+          expense tracking for everyone.
         </p>
       </section>
 
-
-      {/* =================================================
+      {/* ======================================
           SUMMARY CARDS
-      ================================================= */}
+      ====================================== */}
 
       <section className="cards">
-
         {/* TOTAL COLLECTED */}
 
         <div
           className="card"
           onClick={() =>
-            showDetails("collected")
+            setDetailsType(
+              detailsType === "collected"
+                ? null
+                : "collected"
+            )
           }
           style={{
             cursor: "pointer",
@@ -247,12 +254,7 @@ export default function Dashboard() {
           </span>
 
           <strong>
-            ₹
-            {Number(
-              summary.totalIncome || 0
-            ).toLocaleString(
-              "en-IN"
-            )}
+            {money(summary.totalIncome)}
           </strong>
 
           <small>
@@ -260,13 +262,16 @@ export default function Dashboard() {
           </small>
         </div>
 
-
         {/* PENDING DONATIONS */}
 
         <div
           className="card"
           onClick={() =>
-            showDetails("pending")
+            setDetailsType(
+              detailsType === "pending"
+                ? null
+                : "pending"
+            )
           }
           style={{
             cursor: "pointer",
@@ -277,19 +282,13 @@ export default function Dashboard() {
           </span>
 
           <strong>
-            ₹
-            {Number(
-              summary.totalPending || 0
-            ).toLocaleString(
-              "en-IN"
-            )}
+            {money(summary.totalPending)}
           </strong>
 
           <small>
             Click to view details
           </small>
         </div>
-
 
         {/* REMAINING BALANCE */}
 
@@ -299,287 +298,116 @@ export default function Dashboard() {
           </span>
 
           <strong>
-            ₹
-            {Number(
-              summary.balance || 0
-            ).toLocaleString(
-              "en-IN"
-            )}
+            {money(summary.balance)}
           </strong>
         </div>
-
       </section>
 
+      {/* ======================================
+          COLLECTED / PENDING DETAILS
+      ====================================== */}
 
-      {/* =================================================
-          SELECTED CARD DETAILS
-      ================================================= */}
+      {detailsType && (
+        <section className="panel">
+          <h2>
+            {detailsType === "collected"
+              ? "💰 Collected Donations"
+              : "⏳ Pending Donations"}
+          </h2>
 
-      {selectedDetails && (
-        <section
-          className="panel"
-          id="details-section"
-        >
+          {detailTransactions.length ===
+          0 ? (
+            <p>
+              {detailsType === "collected"
+                ? "No collected donations yet."
+                : "No pending donations yet."}
+            </p>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Person</th>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Date & Time</th>
+                  </tr>
+                </thead>
 
-          {/* =============================================
-              COLLECTED DETAILS
-          ============================================= */}
+                <tbody>
+                  {detailTransactions.map(
+                    (item) => (
+                      <tr
+                        key={item._id}
+                      >
+                        <td>
+                          {item.donorName ||
+                            item.title ||
+                            "-"}
+                        </td>
 
-          {selectedDetails ===
-            "collected" && (
-            <>
-              <h2>
-                💰 Collected Donations
-              </h2>
+                        <td>
+                          {money(
+                            item.amount
+                          )}
+                        </td>
 
-              <p>
-                Total collected:{" "}
-                <strong>
-                  ₹
-                  {Number(
-                    collectedTotal
-                  ).toLocaleString(
-                    "en-IN"
-                  )}
-                </strong>
-              </p>
+                        <td>
+                          {item.description ||
+                            "-"}
+                        </td>
 
-              {collectedTransactions.length ===
-              0 ? (
-                <p>
-                  No collected
-                  donations yet.
-                </p>
-              ) : (
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>
-                          Purpose
-                        </th>
-
-                        <th>
-                          Amount
-                        </th>
-
-                        <th>
-                          Added By
-                        </th>
-
-                        <th>
-                          Date & Time
-                        </th>
-
-                        <th>
-                          Description
-                        </th>
+                        <td>
+                          {formatDate(
+                            item.createdAt
+                          )}
+                        </td>
                       </tr>
-                    </thead>
+                    )
+                  )}
+                </tbody>
 
-                    <tbody>
-                      {collectedTransactions.map(
-                        (item) => (
-                          <tr
-                            key={
-                              item._id
-                            }
-                          >
-                            <td>
-                              {item.title ||
-                                "-"}
-                            </td>
+                <tfoot>
+                  <tr>
+                    <td>
+                      <strong>
+                        Total
+                      </strong>
+                    </td>
 
-                            <td>
-                              ₹
-                              {Number(
+                    <td>
+                      <strong>
+                        {money(
+                          detailTransactions.reduce(
+                            (
+                              sum,
+                              item
+                            ) =>
+                              sum +
+                              Number(
                                 item.amount ||
                                   0
-                              ).toLocaleString(
-                                "en-IN"
-                              )}
-                            </td>
+                              ),
+                            0
+                          )
+                        )}
+                      </strong>
+                    </td>
 
-                            <td>
-                              {
-                                item
-                                  .addedBy
-                                  ?.name ||
-                                "Unknown"
-                              }
-                            </td>
-
-                            <td>
-                              {new Date(
-                                item.createdAt
-                              ).toLocaleString()}
-                            </td>
-
-                            <td>
-                              {item.description ||
-                                "-"}
-                            </td>
-                          </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedDetails(
-                    null
-                  )
-                }
-                style={{
-                  marginTop: "15px",
-                }}
-              >
-                Close Details
-              </button>
-            </>
+                    <td colSpan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           )}
-
-
-          {/* =============================================
-              PENDING DETAILS
-          ============================================= */}
-
-          {selectedDetails ===
-            "pending" && (
-            <>
-              <h2>
-                ⏳ Pending Donations
-              </h2>
-
-              <p>
-                Total pending:{" "}
-                <strong>
-                  ₹
-                  {Number(
-                    pendingTotal
-                  ).toLocaleString(
-                    "en-IN"
-                  )}
-                </strong>
-              </p>
-
-              {pendingTransactions.length ===
-              0 ? (
-                <p>
-                  No pending
-                  donations.
-                </p>
-              ) : (
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>
-                          Donor Name
-                        </th>
-
-                        <th>
-                          Amount
-                        </th>
-
-                        <th>
-                          Description
-                        </th>
-
-                        <th>
-                          Added By
-                        </th>
-
-                        <th>
-                          Date & Time
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {pendingTransactions.map(
-                        (item) => (
-                          <tr
-                            key={
-                              item._id
-                            }
-                          >
-                            <td>
-                              <strong>
-                                {
-                                  item.donorName ||
-                                  "Unknown"
-                                }
-                              </strong>
-                            </td>
-
-                            <td>
-                              ₹
-                              {Number(
-                                item.amount ||
-                                  0
-                              ).toLocaleString(
-                                "en-IN"
-                              )}
-                            </td>
-
-                            <td>
-                              {item.description ||
-                                "-"}
-                            </td>
-
-                            <td>
-                              {
-                                item
-                                  .addedBy
-                                  ?.name ||
-                                "Unknown"
-                              }
-                            </td>
-
-                            <td>
-                              {new Date(
-                                item.createdAt
-                              ).toLocaleString()}
-                            </td>
-                          </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedDetails(
-                    null
-                  )
-                }
-                style={{
-                  marginTop: "15px",
-                }}
-              >
-                Close Details
-              </button>
-            </>
-          )}
-
         </section>
       )}
 
-
-      {/* =================================================
-          FILTER
-      ================================================= */}
+      {/* ======================================
+          PERSON FILTER
+      ====================================== */}
 
       <section className="panel">
-
         <h2>
           🔎 Filter Transactions
         </h2>
@@ -600,221 +428,153 @@ export default function Dashboard() {
             All Persons
           </option>
 
-          {members.map(
-            (member) => (
-              <option
-                key={member}
-                value={member}
-              >
-                {member}
-              </option>
-            )
-          )}
+          {members.map((person) => (
+            <option
+              key={person}
+              value={person}
+            >
+              {person}
+            </option>
+          ))}
         </select>
-
-
-        {/* PERSON TOTAL */}
 
         <div
           style={{
             marginTop: "20px",
             padding: "20px",
+            background: "#f5f5f5",
             borderRadius: "12px",
-            background:
-              "#f5f5f5",
           }}
         >
-
           <span>
-            {selectedPerson ===
-            "all"
+            {selectedPerson === "all"
               ? "Total Spent by Everyone"
               : `Total Spent by ${selectedPerson}`}
           </span>
 
           <h2
             style={{
-              marginTop: "5px",
-              marginBottom: "0",
+              margin: "5px 0 0",
             }}
           >
-            ₹
-            {Number(
-              filteredPersonTotal
-            ).toLocaleString(
-              "en-IN"
+            {money(
+              selectedPersonSpent
             )}
           </h2>
-
         </div>
-
 
         <p>
           Showing transactions for{" "}
-
           <strong>
-            {selectedPerson ===
-            "all"
+            {selectedPerson === "all"
               ? "everyone"
               : selectedPerson}
           </strong>
         </p>
-
       </section>
 
-
-      {/* =================================================
+      {/* ======================================
           TRANSACTION HISTORY
-      ================================================= */}
+      ====================================== */}
 
       <section className="panel">
-
         <h2>
           Transaction History
+          {selectedPerson !== "all" &&
+            ` — ${selectedPerson}`}
         </h2>
 
         {loading ? (
+          <p>Loading...</p>
+        ) : filteredTransactions.length ===
+          0 ? (
           <p>
-            Loading...
+            No transactions found.
           </p>
         ) : (
           <div className="table-wrap">
-
             <table>
-
               <thead>
                 <tr>
+                  <th>Type</th>
                   <th>
-                    Type
+                    Person / Purpose
                   </th>
-
-                  <th>
-                    Purpose
-                  </th>
-
-                  <th>
-                    Amount
-                  </th>
-
-                  <th>
-                    Spent By
-                  </th>
-
-                  <th>
-                    Added By
-                  </th>
-
-                  <th>
-                    Date & Time
-                  </th>
-
-                  <th>
-                    Description
-                  </th>
+                  <th>Amount</th>
+                  <th>Spent By</th>
+                  <th>Added By</th>
+                  <th>Date & Time</th>
+                  <th>Description</th>
                 </tr>
               </thead>
 
-
               <tbody>
-
-                {filteredTransactions.length ===
-                0 ? (
-                  <tr>
-                    <td
-                      colSpan="7"
+                {filteredTransactions.map(
+                  (item) => (
+                    <tr
+                      key={item._id}
                     >
-                      No transactions
-                      found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTransactions.map(
-                    (item) => (
-                      <tr
-                        key={
-                          item._id
-                        }
-                      >
-
-                        <td>
-                          <span
-                            className={`badge ${item.type}`}
-                          >
-                            {item.type ===
-                            "income"
-                              ? "Money Added"
-                              : item.type ===
-                                "expense"
-                              ? "Money Spent"
-                              : "Pending Donation"}
-                          </span>
-                        </td>
-
-
-                        <td>
+                      <td>
+                        <span
+                          className={`badge ${item.type}`}
+                        >
                           {item.type ===
-                          "pending"
+                          "income"
+                            ? "Money Collected"
+                            : item.type ===
+                              "pending"
                             ? "Pending Donation"
-                            : item.title}
-                        </td>
+                            : "Money Spent"}
+                        </span>
+                      </td>
 
-
-                        <td>
-                          ₹
-                          {Number(
-                            item.amount ||
-                              0
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </td>
-
-
-                        <td>
-                          {item.type ===
-                          "expense"
-                            ? item.spentBy ||
-                              "Not specified"
-                            : "-"}
-                        </td>
-
-
-                        <td>
-                          {
-                            item
-                              .addedBy
-                              ?.name ||
-                            "Unknown"
-                          }
-                        </td>
-
-
-                        <td>
-                          {new Date(
-                            item.createdAt
-                          ).toLocaleString()}
-                        </td>
-
-
-                        <td>
-                          {item.description ||
+                      <td>
+                        {item.type ===
+                        "expense"
+                          ? item.title
+                          : item.donorName ||
+                            item.title ||
                             "-"}
-                        </td>
+                      </td>
 
-                      </tr>
-                    )
+                      <td>
+                        {money(
+                          item.amount
+                        )}
+                      </td>
+
+                      <td>
+                        {item.type ===
+                        "expense"
+                          ? item.spentBy ||
+                            "Not specified"
+                          : "-"}
+                      </td>
+
+                      <td>
+                        {item.addedBy
+                          ?.name ||
+                          "Unknown"}
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          item.createdAt
+                        )}
+                      </td>
+
+                      <td>
+                        {item.description ||
+                          "-"}
+                      </td>
+                    </tr>
                   )
                 )}
-
               </tbody>
-
             </table>
-
           </div>
         )}
-
       </section>
-
     </div>
   );
 }

@@ -4,11 +4,9 @@ const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-
 // ==========================================
 // PUBLIC - GET ALL TRANSACTIONS
 // ==========================================
-
 router.get("/", async (req, res) => {
   try {
     const transactions = await Transaction.find()
@@ -20,63 +18,63 @@ router.get("/", async (req, res) => {
     console.error("Get transactions error:", error);
 
     res.status(500).json({
-      message:
-        error.message || "Unable to get transactions",
+      message: error.message || "Unable to get transactions",
     });
   }
 });
 
-
 // ==========================================
-// PUBLIC - GET SUMMARY
+// PUBLIC - GET TRANSACTION SUMMARY
 // ==========================================
-
 router.get("/summary", async (req, res) => {
   try {
     const transactions = await Transaction.find();
 
+    // Money actually collected
     const totalIncome = transactions
       .filter((item) => item.type === "income")
       .reduce(
-        (sum, item) => sum + Number(item.amount),
+        (sum, item) => sum + Number(item.amount || 0),
         0
       );
 
+    // Money spent
     const totalExpense = transactions
       .filter((item) => item.type === "expense")
       .reduce(
-        (sum, item) => sum + Number(item.amount),
+        (sum, item) => sum + Number(item.amount || 0),
         0
       );
 
-    const pendingDonations = transactions
+    // Donations promised but not yet collected
+    const totalPending = transactions
       .filter((item) => item.type === "pending")
       .reduce(
-        (sum, item) => sum + Number(item.amount),
+        (sum, item) => sum + Number(item.amount || 0),
         0
       );
 
     res.status(200).json({
       totalIncome,
       totalExpense,
-      pendingDonations,
+      totalPending,
+
+      // Pending donations are NOT included
+      // because the money has not been collected yet.
       balance: totalIncome - totalExpense,
     });
   } catch (error) {
     console.error("Get summary error:", error);
 
     res.status(500).json({
-      message:
-        error.message || "Unable to get summary",
+      message: error.message || "Unable to get summary",
     });
   }
 });
 
-
 // ==========================================
 // ADMIN - ADD TRANSACTION
 // ==========================================
-
 router.post("/", protect, async (req, res) => {
   try {
     const {
@@ -88,11 +86,7 @@ router.post("/", protect, async (req, res) => {
       donorName,
     } = req.body;
 
-
-    // ----------------------------------------
-    // BASIC VALIDATION
-    // ----------------------------------------
-
+    // Basic validation
     if (
       !type ||
       amount === undefined ||
@@ -103,107 +97,77 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-
-    // ----------------------------------------
-    // VALID TYPE
-    // ----------------------------------------
-
-    if (
-      !["income", "expense", "pending"].includes(
-        type
-      )
-    ) {
+    if (!["income", "expense", "pending"].includes(type)) {
       return res.status(400).json({
-        message:
-          "Type must be income, expense or pending",
+        message: "Invalid transaction type",
       });
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // EXPENSE
-    // ----------------------------------------
-
+    // ==========================================
     if (type === "expense") {
-      if (!title || !title.trim()) {
+      if (!title) {
         return res.status(400).json({
           message: "Purpose is required",
         });
       }
 
-      if (!spentBy || !spentBy.trim()) {
+      if (!spentBy) {
         return res.status(400).json({
-          message:
-            "Please select who spent the money",
+          message: "Please select who spent the money",
         });
       }
     }
 
-
-    // ----------------------------------------
-    // INCOME
-    // ----------------------------------------
-
+    // ==========================================
+    // INCOME / COLLECTED
+    // ==========================================
     if (type === "income") {
-      if (!donorName || !donorName.trim()) {
+      if (!donorName) {
         return res.status(400).json({
-          message:
-            "Please enter the person name",
+          message: "Person name is required",
         });
       }
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // PENDING DONATION
-    // ----------------------------------------
-
+    // ==========================================
     if (type === "pending") {
-      if (!donorName || !donorName.trim()) {
+      if (!donorName) {
         return res.status(400).json({
-          message:
-            "Please enter the donor name",
+          message: "Donor name is required",
         });
       }
     }
 
+    const transaction = await Transaction.create({
+      type,
 
-    // ----------------------------------------
-    // CREATE TRANSACTION
-    // ----------------------------------------
+      // Expense uses title as purpose.
+      // Income/pending uses donor name as title.
+      title:
+        type === "expense"
+          ? title
+          : donorName,
 
-    const transaction =
-      await Transaction.create({
-        type,
+      amount: Number(amount),
 
-        title:
-          type === "expense"
-            ? title.trim()
-            : donorName.trim(),
+      description: description || "",
 
-        amount: Number(amount),
+      spentBy:
+        type === "expense"
+          ? spentBy
+          : "",
 
-        description:
-          description || "",
+      donorName:
+        type === "income" || type === "pending"
+          ? donorName
+          : "",
 
-        spentBy:
-          type === "expense"
-            ? spentBy.trim()
-            : "",
-
-        donorName:
-          type === "income" ||
-          type === "pending"
-            ? donorName.trim()
-            : "",
-
-        addedBy: req.user.id,
-      });
-
-
-    // ----------------------------------------
-    // POPULATE ADMIN
-    // ----------------------------------------
+      addedBy: req.user.id,
+    });
 
     const populatedTransaction =
       await transaction.populate(
@@ -211,16 +175,9 @@ router.post("/", protect, async (req, res) => {
         "name"
       );
 
-
-    res.status(201).json(
-      populatedTransaction
-    );
-
+    res.status(201).json(populatedTransaction);
   } catch (error) {
-    console.error(
-      "Add transaction error:",
-      error
-    );
+    console.error("Add transaction error:", error);
 
     res.status(500).json({
       message:
@@ -230,11 +187,9 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-
 // ==========================================
 // ADMIN - UPDATE TRANSACTION
 // ==========================================
-
 router.put("/:id", protect, async (req, res) => {
   try {
     const {
@@ -246,12 +201,8 @@ router.put("/:id", protect, async (req, res) => {
       donorName,
     } = req.body;
 
-
     const transaction =
-      await Transaction.findById(
-        req.params.id
-      );
-
+      await Transaction.findById(req.params.id);
 
     if (!transaction) {
       return res.status(404).json({
@@ -259,137 +210,87 @@ router.put("/:id", protect, async (req, res) => {
       });
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // TYPE
-    // ----------------------------------------
-
+    // ==========================================
     if (type !== undefined) {
       if (
-        !["income", "expense", "pending"].includes(
-          type
-        )
+        !["income", "expense", "pending"].includes(type)
       ) {
         return res.status(400).json({
-          message:
-            "Invalid transaction type",
+          message: "Invalid transaction type",
         });
       }
 
       transaction.type = type;
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // AMOUNT
-    // ----------------------------------------
-
+    // ==========================================
     if (
       amount !== undefined &&
       amount !== ""
     ) {
-      transaction.amount =
-        Number(amount);
+      transaction.amount = Number(amount);
     }
 
-
-    // ----------------------------------------
-    // DESCRIPTION
-    // ----------------------------------------
-
-    if (description !== undefined) {
-      transaction.description =
-        description;
-    }
-
-
-    // ----------------------------------------
+    // ==========================================
     // EXPENSE
-    // ----------------------------------------
-
+    // ==========================================
     if (transaction.type === "expense") {
+      if (title !== undefined) {
+        transaction.title = title;
+      }
 
-      if (!title || !title.trim()) {
+      if (!spentBy) {
         return res.status(400).json({
-          message: "Purpose is required",
+          message: "Please select who spent the money",
         });
       }
 
-      if (!spentBy || !spentBy.trim()) {
-        return res.status(400).json({
-          message:
-            "Please select who spent the money",
-        });
-      }
-
-      transaction.title =
-        title.trim();
-
-      transaction.spentBy =
-        spentBy.trim();
-
+      transaction.spentBy = spentBy;
       transaction.donorName = "";
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // INCOME
-    // ----------------------------------------
-
-    else if (
-      transaction.type === "income"
-    ) {
-
-      if (
-        !donorName ||
-        !donorName.trim()
-      ) {
+    // ==========================================
+    if (transaction.type === "income") {
+      if (!donorName) {
         return res.status(400).json({
-          message:
-            "Please enter the person name",
+          message: "Person name is required",
         });
       }
 
-      transaction.title =
-        donorName.trim();
-
-      transaction.donorName =
-        donorName.trim();
-
+      transaction.donorName = donorName;
+      transaction.title = donorName;
       transaction.spentBy = "";
     }
 
-
-    // ----------------------------------------
+    // ==========================================
     // PENDING
-    // ----------------------------------------
-
-    else if (
-      transaction.type === "pending"
-    ) {
-
-      if (
-        !donorName ||
-        !donorName.trim()
-      ) {
+    // ==========================================
+    if (transaction.type === "pending") {
+      if (!donorName) {
         return res.status(400).json({
-          message:
-            "Please enter the donor name",
+          message: "Donor name is required",
         });
       }
 
-      transaction.title =
-        donorName.trim();
-
-      transaction.donorName =
-        donorName.trim();
-
+      transaction.donorName = donorName;
+      transaction.title = donorName;
       transaction.spentBy = "";
     }
 
+    // ==========================================
+    // DESCRIPTION
+    // ==========================================
+    if (description !== undefined) {
+      transaction.description = description;
+    }
 
     await transaction.save();
-
 
     const updatedTransaction =
       await transaction.populate(
@@ -397,11 +298,7 @@ router.put("/:id", protect, async (req, res) => {
         "name"
       );
 
-
-    res.status(200).json(
-      updatedTransaction
-    );
-
+    res.status(200).json(updatedTransaction);
   } catch (error) {
     console.error(
       "Update transaction error:",
@@ -416,52 +313,37 @@ router.put("/:id", protect, async (req, res) => {
   }
 });
 
-
 // ==========================================
 // ADMIN - DELETE TRANSACTION
 // ==========================================
+router.delete("/:id", protect, async (req, res) => {
+  try {
+    const transaction =
+      await Transaction.findById(req.params.id);
 
-router.delete(
-  "/:id",
-  protect,
-  async (req, res) => {
-    try {
-      const transaction =
-        await Transaction.findById(
-          req.params.id
-        );
-
-
-      if (!transaction) {
-        return res.status(404).json({
-          message:
-            "Transaction not found",
-        });
-      }
-
-
-      await transaction.deleteOne();
-
-
-      res.status(200).json({
-        message:
-          "Transaction deleted successfully",
-      });
-
-    } catch (error) {
-      console.error(
-        "Delete transaction error:",
-        error
-      );
-
-      res.status(500).json({
-        message:
-          error.message ||
-          "Unable to delete transaction",
+    if (!transaction) {
+      return res.status(404).json({
+        message: "Transaction not found",
       });
     }
-  }
-);
 
+    await transaction.deleteOne();
+
+    res.status(200).json({
+      message: "Transaction deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Delete transaction error:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        error.message ||
+        "Unable to delete transaction",
+    });
+  }
+});
 
 module.exports = router;
