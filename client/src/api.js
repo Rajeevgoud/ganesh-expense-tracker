@@ -1,17 +1,33 @@
-import axios from "axios";
+import React, { useEffect, useState } from "react";
 
-export const API_URL = "https://ganesh-expense-tracker.onrender.com/api";
+function App() {
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
 
-export const api = axios.create({
-  baseURL: API_URL
-});
-
-export function authConfig() {
-  const token = localStorage.getItem("token");
-
-  return {
-    headers: {
-      Authorization: `Bearer ${token}`
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark-mode");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.body.classList.remove("dark-mode");
+      localStorage.setItem("theme", "light");
     }
-  };
+  }, [darkMode]);
+
+  return (
+    <div className="app">
+      {/* Theme button */}
+      <button
+        className="theme-toggle"
+        onClick={() => setDarkMode(!darkMode)}
+      >
+        {darkMode ? "☀️ Morning Mode" : "🌙 Night Mode"}
+      </button>
+
+      {/* Your existing app/routes/components go here */}
+    </div>
+  );
 }
+
+export default App;

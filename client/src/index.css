@@ -1,33 +1,127 @@
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; background: #f6f7fb; color: #222; }
-.navbar { min-height: 64px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; gap: 20px; }
-.brand { font-weight: 700; color: #222; text-decoration: none; }
-.nav-links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.nav-links a { color: #333; text-decoration: none; }
-button { border: 0; border-radius: 8px; padding: 11px 16px; cursor: pointer; font-size: 15px; background: #222; color: white; }
-.container { width: min(1100px, 92%); margin: 28px auto; }
-.hero { text-align: center; margin-bottom: 25px; }
-.hero h1 { margin-bottom: 8px; }
-.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-.card, .panel, .form-card { background: white; border: 1px solid #e2e2e2; border-radius: 12px; padding: 20px; }
-.card span { display: block; color: #666; margin-bottom: 8px; }
-.card strong { font-size: 26px; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-th { white-space: nowrap; }
-.badge { padding: 5px 8px; border-radius: 20px; font-size: 12px; background: #eee; }
-.income { background: #dff4e5; }
-.expense { background: #fde3e3; }
-.form-card { max-width: 650px; margin: 30px auto; }
-.form-card.small { max-width: 450px; }
-form { display: flex; flex-direction: column; gap: 10px; }
-label { font-weight: 600; margin-top: 5px; }
-input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-textarea { min-height: 90px; resize: vertical; }
-.error { color: #b00020; }
-.success { color: #137333; }
-@media (max-width: 700px) {
-  .navbar { padding: 12px 4%; flex-direction: column; align-items: flex-start; }
-  .cards { grid-template-columns: 1fr; }
+/* ================================
+   NORMAL / MORNING MODE
+================================ */
+
+body {
+  margin: 0;
+  background: #f5f7fa;
+  color: #222;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app {
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+
+/* ================================
+   THEME BUTTON
+================================ */
+
+.theme-toggle {
+  position: fixed;
+  top: 85px;
+  right: 25px;
+
+  border: none;
+  border-radius: 10px;
+
+  padding: 10px 16px;
+
+  background: #222;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  z-index: 9999;
+
+  transition: 0.3s;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.03);
+}
+
+
+/* ================================
+   NIGHT MODE
+================================ */
+
+body.dark-mode {
+  background: #121212;
+  color: #f1f1f1;
+}
+
+
+/* Main cards */
+
+body.dark-mode .card,
+body.dark-mode section,
+body.dark-mode .container,
+body.dark-mode .panel,
+body.dark-mode .filter-section,
+body.dark-mode .transaction-section {
+  background: #1e1e1e;
+  color: #f1f1f1;
+  border-color: #333;
+}
+
+
+/* Headings */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode p,
+body.dark-mode label,
+body.dark-mode strong {
+  color: #f1f1f1;
+}
+
+
+/* Inputs */
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #252525;
+  color: #fff;
+  border-color: #444;
+}
+
+
+/* Placeholder */
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #999;
+}
+
+
+/* Tables */
+
+body.dark-mode table {
+  color: #f1f1f1;
+}
+
+body.dark-mode th {
+  background: #252525;
+  color: #fff;
+}
+
+body.dark-mode td {
+  border-color: #333;
+}
+
+
+/* Theme button in night mode */
+
+body.dark-mode .theme-toggle {
+  background: #f5f5f5;
+  color: #222;
 }
