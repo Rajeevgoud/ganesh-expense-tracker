@@ -26,7 +26,6 @@ export default function Dashboard() {
     useState(true);
 
 
-  // Selected person
   const [selectedPerson, setSelectedPerson] =
     useState("all");
 
@@ -94,7 +93,6 @@ export default function Dashboard() {
       } finally {
 
         setLoading(false);
-
       }
 
     }, []);
@@ -123,7 +121,7 @@ export default function Dashboard() {
 
 
   // =================================================
-  // PERSON TOTALS
+  // PERSON SPENDING TOTALS
   // =================================================
 
   const spendingTotals =
@@ -164,7 +162,7 @@ export default function Dashboard() {
 
 
   // =================================================
-  // FILTERED TRANSACTIONS
+  // FILTER TRANSACTIONS
   // =================================================
 
   const filteredTransactions =
@@ -181,7 +179,7 @@ export default function Dashboard() {
 
 
   // =================================================
-  // FILTERED PERSON TOTAL
+  // FILTER TOTAL
   // =================================================
 
   const filteredPersonTotal =
@@ -210,7 +208,7 @@ export default function Dashboard() {
 
 
   // =================================================
-  // RENDER
+  // RETURN
   // =================================================
 
   return (
@@ -236,12 +234,12 @@ export default function Dashboard() {
 
 
       {/* ============================================
-          SUMMARY CARDS
+          SUMMARY
       ============================================ */}
 
       <section className="cards">
 
-        {/* TOTAL COLLECTED */}
+        {/* COLLECTED */}
 
         <div className="card">
 
@@ -344,19 +342,21 @@ export default function Dashboard() {
 
           {members.map(
             (member) => (
+
               <option
                 key={member}
                 value={member}
               >
                 {member}
               </option>
+
             )
           )}
 
         </select>
 
 
-        {/* FILTER TOTAL */}
+        {/* TOTAL FOR SELECTED PERSON */}
 
         <div
           style={{
@@ -369,10 +369,12 @@ export default function Dashboard() {
         >
 
           <span>
+
             {selectedPerson ===
             "all"
               ? "Total Spent by Everyone"
               : `Total Spent by ${selectedPerson}`}
+
           </span>
 
 
@@ -400,10 +402,12 @@ export default function Dashboard() {
           Showing transactions for{" "}
 
           <strong>
+
             {selectedPerson ===
             "all"
               ? "everyone"
               : selectedPerson}
+
           </strong>
 
         </p>
@@ -498,8 +502,6 @@ export default function Dashboard() {
                         }
                       >
 
-                        {/* TYPE */}
-
                         <td>
 
                           <span
@@ -519,16 +521,15 @@ export default function Dashboard() {
                         </td>
 
 
-                        {/* PURPOSE */}
-
                         <td>
-                          {
-                            item.title
-                          }
+
+                          {item.type ===
+                          "pending"
+                            ? "Pending Donation"
+                            : item.title}
+
                         </td>
 
-
-                        {/* AMOUNT */}
 
                         <td>
 
@@ -543,23 +544,16 @@ export default function Dashboard() {
                         </td>
 
 
-                        {/* SPENT BY */}
-
                         <td>
 
                           {item.type ===
                           "expense"
                             ? item.spentBy ||
                               "Not specified"
-                            : item.type ===
-                              "pending"
-                            ? "-"
                             : "-"}
 
                         </td>
 
-
-                        {/* ADDED BY */}
 
                         <td>
 
@@ -573,8 +567,6 @@ export default function Dashboard() {
                         </td>
 
 
-                        {/* DATE */}
-
                         <td>
 
                           {new Date(
@@ -583,8 +575,6 @@ export default function Dashboard() {
 
                         </td>
 
-
-                        {/* DESCRIPTION */}
 
                         <td>
 
@@ -633,145 +623,145 @@ export default function Dashboard() {
 
         ) : (
 
-          <>
+          <div className="table-wrap">
 
-            <div className="table-wrap">
+            <table>
 
-              <table>
+              <thead>
 
-                <thead>
+                <tr>
 
-                  <tr>
+                  <th>
+                    Donor Name
+                  </th>
 
-                    <th>
-                      Donor
-                    </th>
+                  <th>
+                    Amount
+                  </th>
 
-                    <th>
-                      Amount
-                    </th>
+                  <th>
+                    Description
+                  </th>
 
-                    <th>
-                      Details
-                    </th>
+                  <th>
+                    Added By
+                  </th>
 
-                    <th>
-                      Added By
-                    </th>
+                  <th>
+                    Date & Time
+                  </th>
 
-                    <th>
-                      Date & Time
-                    </th>
+                </tr>
 
-                  </tr>
-
-                </thead>
+              </thead>
 
 
-                <tbody>
+              <tbody>
 
-                  {pendingDonations.map(
-                    (item) => (
+                {pendingDonations.map(
+                  (item) => (
 
-                      <tr
-                        key={
-                          item._id
-                        }
-                      >
+                    <tr
+                      key={
+                        item._id
+                      }
+                    >
 
-                        <td>
+                      <td>
 
-                          <strong>
-                            {
-                              item.donorName ||
-                              "Unknown"
-                            }
-                          </strong>
-
-                        </td>
-
-
-                        <td>
-
-                          ₹
-                          {Number(
-                            item.amount ||
-                              0
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-
-                        </td>
-
-
-                        <td>
-
+                        <strong>
                           {
-                            item.description ||
-                            item.title ||
-                            "-"
-                          }
-
-                        </td>
-
-
-                        <td>
-
-                          {
-                            item
-                              .addedBy
-                              ?.name ||
+                            item.donorName ||
                             "Unknown"
                           }
+                        </strong>
 
-                        </td>
-
-
-                        <td>
-
-                          {new Date(
-                            item.createdAt
-                          ).toLocaleString()}
-
-                        </td>
-
-                      </tr>
-
-                    )
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
+                      </td>
 
 
-            {/* TOTAL PENDING */}
+                      <td>
 
-            <div
-              style={{
-                marginTop: "20px",
-                padding: "15px",
-                fontSize: "20px",
-              }}
-            >
+                        ₹
+                        {Number(
+                          item.amount ||
+                            0
+                        ).toLocaleString(
+                          "en-IN"
+                        )}
 
-              <strong>
+                      </td>
 
-                Total Pending: ₹
-                {Number(
-                  summary.totalPending ||
-                    0
-                ).toLocaleString(
-                  "en-IN"
+
+                      <td>
+
+                        {
+                          item.description ||
+                          "-"
+                        }
+
+                      </td>
+
+
+                      <td>
+
+                        {
+                          item
+                            .addedBy
+                            ?.name ||
+                          "Unknown"
+                        }
+
+                      </td>
+
+
+                      <td>
+
+                        {new Date(
+                          item.createdAt
+                        ).toLocaleString()}
+
+                      </td>
+
+                    </tr>
+
+                  )
                 )}
 
-              </strong>
+              </tbody>
 
-            </div>
+            </table>
 
-          </>
+          </div>
+
+        )}
+
+
+        {/* TOTAL PENDING */}
+
+        {pendingDonations.length >
+          0 && (
+
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "15px",
+              fontSize: "20px",
+            }}
+          >
+
+            <strong>
+
+              Total Pending: ₹
+              {Number(
+                summary.totalPending ||
+                  0
+              ).toLocaleString(
+                "en-IN"
+              )}
+
+            </strong>
+
+          </div>
 
         )}
 
@@ -779,7 +769,7 @@ export default function Dashboard() {
 
 
       {/* ============================================
-          PERSON TOTALS
+          PERSON-WISE TOTALS
       ============================================ */}
 
       <section className="panel">
@@ -826,6 +816,7 @@ export default function Dashboard() {
                       </strong>
 
                     </td>
+
 
                     <td>
 

@@ -69,12 +69,14 @@ export default function Admin() {
 
 
   // =================================================
-  // LOAD TRANSACTIONS
+  // LOAD
   // =================================================
 
   const loadTransactions =
     async () => {
+
       try {
+
         const response =
           await api.get(
             "/transactions"
@@ -83,7 +85,9 @@ export default function Admin() {
         setTransactions(
           response.data
         );
+
       } catch (error) {
+
         console.error(error);
 
         setMessage(
@@ -99,10 +103,11 @@ export default function Admin() {
 
 
   // =================================================
-  // LOGIN CHECK
+  // LOGIN
   // =================================================
 
   if (!token) {
+
     return (
       <Navigate
         to="/login"
@@ -125,10 +130,13 @@ export default function Admin() {
 
 
     setForm((previous) => ({
+
       ...previous,
 
       [name]: value,
 
+
+      // Switching to income
       ...(name === "type" &&
       value === "income"
         ? {
@@ -137,6 +145,8 @@ export default function Admin() {
           }
         : {}),
 
+
+      // Switching to expense
       ...(name === "type" &&
       value === "expense"
         ? {
@@ -144,12 +154,16 @@ export default function Admin() {
           }
         : {}),
 
+
+      // Switching to pending
       ...(name === "type" &&
       value === "pending"
         ? {
             spentBy: "",
+            title: "",
           }
         : {}),
+
     }));
   };
 
@@ -170,6 +184,7 @@ export default function Admin() {
       form.type === "expense" &&
       !form.spentBy
     ) {
+
       setMessage(
         "Please select who spent the money."
       );
@@ -183,8 +198,23 @@ export default function Admin() {
       form.type === "pending" &&
       !form.donorName
     ) {
+
       setMessage(
-        "Please select who is pending."
+        "Please select donor name."
+      );
+
+      return;
+    }
+
+
+    // Income / Expense purpose
+    if (
+      form.type !== "pending" &&
+      !form.title.trim()
+    ) {
+
+      setMessage(
+        "Please enter the purpose."
       );
 
       return;
@@ -193,9 +223,14 @@ export default function Admin() {
 
     const data = {
 
-      type: form.type,
+      type:
+        form.type,
 
-      title: form.title,
+      // Pending has automatic title
+      title:
+        form.type === "pending"
+          ? "Pending Donation"
+          : form.title,
 
       amount:
         Number(form.amount),
@@ -279,7 +314,7 @@ export default function Admin() {
           transaction.type,
 
         title:
-          transaction.title,
+          transaction.title || "",
 
         amount:
           transaction.amount,
@@ -311,7 +346,7 @@ export default function Admin() {
 
 
   // =================================================
-  // CANCEL EDIT
+  // CANCEL
   // =================================================
 
   const cancelEdit = () => {
@@ -378,7 +413,7 @@ export default function Admin() {
 
 
   // =================================================
-  // RETURN
+  // UI
   // =================================================
 
   return (
@@ -407,7 +442,7 @@ export default function Admin() {
 
         <form onSubmit={submit}>
 
-          {/* TYPE */}
+          {/* TRANSACTION TYPE */}
 
           <label>
             Transaction Type
@@ -434,19 +469,28 @@ export default function Admin() {
           </select>
 
 
-          {/* PURPOSE */}
+          {/* ========================================
+              PURPOSE
+              Only for income and expense
+          ======================================== */}
 
-          <label>
-            Purpose
-          </label>
+          {form.type !== "pending" && (
+            <>
 
-          <input
-            name="title"
-            placeholder="Example: Decorations"
-            value={form.title}
-            onChange={handleChange}
-            required
-          />
+              <label>
+                Purpose
+              </label>
+
+              <input
+                name="title"
+                placeholder="Example: Decorations"
+                value={form.title}
+                onChange={handleChange}
+                required
+              />
+
+            </>
+          )}
 
 
           {/* AMOUNT */}
@@ -467,10 +511,13 @@ export default function Admin() {
           />
 
 
-          {/* EXPENSE PERSON */}
+          {/* ========================================
+              SPENT BY
+          ======================================== */}
 
           {form.type === "expense" && (
             <>
+
               <label>
                 Spent By
               </label>
@@ -488,24 +535,30 @@ export default function Admin() {
 
                 {members.map(
                   (member) => (
+
                     <option
                       key={member}
                       value={member}
                     >
                       {member}
                     </option>
+
                   )
                 )}
 
               </select>
+
             </>
           )}
 
 
-          {/* PENDING DONOR */}
+          {/* ========================================
+              PENDING DONOR
+          ======================================== */}
 
           {form.type === "pending" && (
             <>
+
               <label>
                 Donor Name
               </label>
@@ -523,16 +576,19 @@ export default function Admin() {
 
                 {members.map(
                   (member) => (
+
                     <option
                       key={member}
                       value={member}
                     >
                       {member}
                     </option>
+
                   )
                 )}
 
               </select>
+
             </>
           )}
 
@@ -584,6 +640,7 @@ export default function Admin() {
           {/* CANCEL */}
 
           {editingId && (
+
             <button
               type="button"
               onClick={cancelEdit}
@@ -593,6 +650,7 @@ export default function Admin() {
             >
               Cancel
             </button>
+
           )}
 
         </form>
@@ -635,7 +693,8 @@ export default function Admin() {
 
                     <strong>
                       {
-                        transaction.title
+                        transaction.title ||
+                        "Pending Donation"
                       }
                     </strong>
 
@@ -661,10 +720,11 @@ export default function Admin() {
                     </p>
 
 
-                    {/* EXPENSE PERSON */}
+                    {/* SPENT BY */}
 
                     {transaction.type ===
                       "expense" && (
+
                       <p>
 
                         Spent by:{" "}
@@ -677,13 +737,15 @@ export default function Admin() {
                         </strong>
 
                       </p>
+
                     )}
 
 
-                    {/* PENDING PERSON */}
+                    {/* PENDING */}
 
                     {transaction.type ===
                       "pending" && (
+
                       <p>
 
                         Pending from:{" "}
@@ -696,19 +758,24 @@ export default function Admin() {
                         </strong>
 
                       </p>
+
                     )}
 
 
                     {/* DESCRIPTION */}
 
                     {transaction.description && (
+
                       <p>
                         {
                           transaction.description
                         }
                       </p>
+
                     )}
 
+
+                    {/* ADMIN */}
 
                     <small>
 
@@ -745,7 +812,8 @@ export default function Admin() {
                       onClick={() =>
                         deleteTransaction(
                           transaction._id,
-                          transaction.title
+                          transaction.title ||
+                            "Pending Donation"
                         )
                       }
                       style={{
@@ -759,10 +827,12 @@ export default function Admin() {
                   </div>
 
                 </div>
+
               )
             )}
 
           </div>
+
         )}
 
       </div>
