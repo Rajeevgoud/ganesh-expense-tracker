@@ -12,9 +12,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   // Person filter
-  const [selectedPerson, setSelectedPerson] = useState("All");
+  const [selectedPerson, setSelectedPerson] =
+    useState("all");
 
-  // All festival members
+  // All members
   const members = [
     "Rajeev",
     "Akhilesh",
@@ -31,10 +32,11 @@ export default function Dashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [summaryRes, transactionRes] = await Promise.all([
-        api.get("/transactions/summary"),
-        api.get("/transactions"),
-      ]);
+      const [summaryRes, transactionRes] =
+        await Promise.all([
+          api.get("/transactions/summary"),
+          api.get("/transactions"),
+        ]);
 
       setSummary(summaryRes.data);
       setTransactions(transactionRes.data);
@@ -48,7 +50,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
 
-    // Refresh every 5 seconds
+    // Automatically refresh every 5 seconds
     const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
@@ -57,57 +59,54 @@ export default function Dashboard() {
   // ==========================================
   // FILTER TRANSACTIONS BY PERSON
   // ==========================================
+
   const filteredTransactions =
-    selectedPerson === "All"
+    selectedPerson === "all"
       ? transactions
       : transactions.filter(
-          (item) =>
-            item.type === "expense" &&
-            item.spentBy === selectedPerson
+          (transaction) =>
+            transaction.type === "expense" &&
+            transaction.spentBy === selectedPerson
         );
 
   // ==========================================
-  // PERSON-WISE TOTALS
+  // TOTAL SPENT BY SELECTED PERSON
   // ==========================================
-  const spendingSummary = members.reduce((totals, person) => {
-    totals[person] = transactions
-      .filter(
-        (item) =>
-          item.type === "expense" &&
-          item.spentBy === person
-      )
-      .reduce(
-        (sum, item) => sum + Number(item.amount || 0),
-        0
-      );
 
-    return totals;
-  }, {});
-
-  // Total spent by selected person
   const selectedPersonTotal =
-    selectedPerson === "All"
-      ? Number(summary.totalExpense || 0)
-      : Number(spendingSummary[selectedPerson] || 0);
+    selectedPerson === "all"
+      ? summary.totalExpense
+      : filteredTransactions
+          .filter(
+            (transaction) =>
+              transaction.type === "expense"
+          )
+          .reduce(
+            (total, transaction) =>
+              total + Number(transaction.amount || 0),
+            0
+          );
 
   return (
     <div>
-      {/* ========================================== */}
-      {/* HERO */}
-      {/* ========================================== */}
+      {/* ======================================
+          HERO
+      ====================================== */}
 
       <section className="hero">
-        <h1>🙏 Ganesh Festival Expense Tracker</h1>
+        <h1>
+          🙏 Ganesh Festival Expense Tracker
+        </h1>
 
         <p>
-          Transparent festival money and expense tracking
-          for everyone.
+          Transparent festival money and expense
+          tracking for everyone.
         </p>
       </section>
 
-      {/* ========================================== */}
-      {/* SUMMARY CARDS */}
-      {/* ========================================== */}
+      {/* ======================================
+          SUMMARY CARDS
+      ====================================== */}
 
       <section className="cards">
         <div className="card">
@@ -115,21 +114,20 @@ export default function Dashboard() {
 
           <strong>
             ₹
-            {Number(summary.totalIncome || 0).toLocaleString(
-              "en-IN"
-            )}
+            {Number(
+              summary.totalIncome || 0
+            ).toLocaleString("en-IN")}
           </strong>
         </div>
 
         <div className="card">
-          <span>
-            {selectedPerson === "All"
-              ? "Total Spent"
-              : `${selectedPerson} Spent`}
-          </span>
+          <span>Total Spent</span>
 
           <strong>
-            ₹{selectedPersonTotal.toLocaleString("en-IN")}
+            ₹
+            {Number(
+              summary.totalExpense || 0
+            ).toLocaleString("en-IN")}
           </strong>
         </div>
 
@@ -138,22 +136,21 @@ export default function Dashboard() {
 
           <strong>
             ₹
-            {Number(summary.balance || 0).toLocaleString(
-              "en-IN"
-            )}
+            {Number(
+              summary.balance || 0
+            ).toLocaleString("en-IN")}
           </strong>
         </div>
       </section>
 
-      {/* ========================================== */}
-      {/* PERSON FILTER */}
-      {/* ========================================== */}
+      {/* ======================================
+          FILTER
+      ====================================== */}
 
       <section className="panel">
         <h2>🔎 Filter Transactions</h2>
 
         <label
-          htmlFor="personFilter"
           style={{
             display: "block",
             marginBottom: "8px",
@@ -164,49 +161,83 @@ export default function Dashboard() {
         </label>
 
         <select
-          id="personFilter"
           value={selectedPerson}
-          onChange={(e) => setSelectedPerson(e.target.value)}
+          onChange={(e) =>
+            setSelectedPerson(e.target.value)
+          }
           style={{
             width: "100%",
             padding: "12px",
             fontSize: "16px",
             borderRadius: "8px",
             border: "1px solid #ccc",
-            marginBottom: "10px",
+            marginBottom: "20px",
           }}
         >
-          <option value="All">
+          <option value="all">
             All Persons
           </option>
 
-          {members.map((person) => (
+          {members.map((member) => (
             <option
-              key={person}
-              value={person}
+              key={member}
+              value={member}
             >
-              {person}
+              {member}
             </option>
           ))}
         </select>
 
-        {selectedPerson !== "All" && (
-          <p>
-            Showing transactions for{" "}
-            <strong>{selectedPerson}</strong>
-          </p>
-        )}
+        {/* SELECTED PERSON TOTAL */}
+
+        <div
+          style={{
+            padding: "18px",
+            borderRadius: "10px",
+            background: "#f5f5f5",
+            marginBottom: "10px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "15px",
+              marginBottom: "5px",
+            }}
+          >
+            {selectedPerson === "all"
+              ? "Total Spent by Everyone"
+              : `Total Spent by ${selectedPerson}`}
+          </div>
+
+          <strong
+            style={{
+              fontSize: "28px",
+            }}
+          >
+            ₹
+            {Number(
+              selectedPersonTotal || 0
+            ).toLocaleString("en-IN")}
+          </strong>
+        </div>
+
+        <p style={{ marginTop: "10px" }}>
+          {selectedPerson === "all"
+            ? "Showing transactions for everyone"
+            : `Showing transactions for ${selectedPerson}`}
+        </p>
       </section>
 
-      {/* ========================================== */}
-      {/* TRANSACTION HISTORY */}
-      {/* ========================================== */}
+      {/* ======================================
+          TRANSACTION HISTORY
+      ====================================== */}
 
       <section className="panel">
         <h2>
           Transaction History
-          {selectedPerson !== "All" &&
-            ` — ${selectedPerson}`}
+          {selectedPerson !== "all"
+            ? ` — ${selectedPerson}`
+            : ""}
         </h2>
 
         {loading ? (
@@ -230,110 +261,84 @@ export default function Dashboard() {
                 {filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan="7">
-                      {selectedPerson === "All"
+                      {selectedPerson === "all"
                         ? "No transactions yet."
-                        : `No expenses found for ${selectedPerson}.`}
+                        : `No transactions found for ${selectedPerson}.`}
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((item) => (
-                    <tr key={item._id}>
-                      <td>
-                        <span
-                          className={`badge ${item.type}`}
-                        >
-                          {item.type === "income"
-                            ? "Money Added"
-                            : "Money Spent"}
-                        </span>
-                      </td>
+                  filteredTransactions.map(
+                    (item) => (
+                      <tr key={item._id}>
+                        {/* TYPE */}
 
-                      <td>{item.title}</td>
+                        <td>
+                          <span
+                            className={`badge ${item.type}`}
+                          >
+                            {item.type === "income"
+                              ? "Money Added"
+                              : "Money Spent"}
+                          </span>
+                        </td>
 
-                      <td>
-                        ₹
-                        {Number(
-                          item.amount || 0
-                        ).toLocaleString("en-IN")}
-                      </td>
+                        {/* PURPOSE */}
 
-                      <td>
-                        {item.type === "expense"
-                          ? item.spentBy || "Not specified"
-                          : "-"}
-                      </td>
+                        <td>
+                          {item.title}
+                        </td>
 
-                      <td>
-                        {item.addedBy?.name || "Unknown"}
-                      </td>
+                        {/* AMOUNT */}
 
-                      <td>
-                        {new Date(
-                          item.createdAt
-                        ).toLocaleString("en-IN")}
-                      </td>
+                        <td>
+                          ₹
+                          {Number(
+                            item.amount || 0
+                          ).toLocaleString(
+                            "en-IN"
+                          )}
+                        </td>
 
-                      <td>
-                        {item.description || "-"}
-                      </td>
-                    </tr>
-                  ))
+                        {/* SPENT BY */}
+
+                        <td>
+                          {item.type === "expense"
+                            ? item.spentBy ||
+                              "Not specified"
+                            : "-"}
+                        </td>
+
+                        {/* ADDED BY */}
+
+                        <td>
+                          {item.addedBy?.name ||
+                            "Unknown"}
+                        </td>
+
+                        {/* DATE */}
+
+                        <td>
+                          {item.createdAt
+                            ? new Date(
+                                item.createdAt
+                              ).toLocaleString()
+                            : "-"}
+                        </td>
+
+                        {/* DESCRIPTION */}
+
+                        <td>
+                          {item.description ||
+                            "-"}
+                        </td>
+                      </tr>
+                    )
+                  )
                 )}
               </tbody>
             </table>
           </div>
         )}
-      </section>
-
-      {/* ========================================== */}
-      {/* PERSON-WISE SPENDING */}
-      {/* ========================================== */}
-
-      <section className="panel">
-        <h2>👥 Person-wise Spending Summary</h2>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Person</th>
-                <th>Total Spent</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {members.map((person) => (
-                <tr key={person}>
-                  <td>
-                    <strong>{person}</strong>
-                  </td>
-
-                  <td>
-                    ₹
-                    {Number(
-                      spendingSummary[person] || 0
-                    ).toLocaleString("en-IN")}
-                  </td>
-                </tr>
-              ))}
-
-              <tr>
-                <td>
-                  <strong>Total</strong>
-                </td>
-
-                <td>
-                  <strong>
-                    ₹
-                    {Number(
-                      summary.totalExpense || 0
-                    ).toLocaleString("en-IN")}
-                  </strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </section>
     </div>
   );
