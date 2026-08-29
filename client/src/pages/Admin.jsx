@@ -1,30 +1,14 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-
-import {
-  api,
-  authConfig,
-} from "../api";
-
+import { api, authConfig } from "../api";
 
 export default function Admin() {
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const token = localStorage.getItem("token");
 
-  const user = JSON.parse(
-    localStorage.getItem("user") ||
-      "null"
-  );
-
-  const token =
-    localStorage.getItem("token");
-
-
-  // =================================================
+  // ==========================================
   // MEMBERS
-  // =================================================
+  // ==========================================
 
   const members = [
     "Rajeev",
@@ -40,10 +24,9 @@ export default function Admin() {
     "Sai",
   ];
 
-
-  // =================================================
+  // ==========================================
   // EMPTY FORM
-  // =================================================
+  // ==========================================
 
   const emptyForm = {
     type: "expense",
@@ -54,189 +37,143 @@ export default function Admin() {
     donorName: "",
   };
 
+  const [form, setForm] = useState(emptyForm);
+  const [transactions, setTransactions] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [message, setMessage] = useState("");
 
-  const [form, setForm] =
-    useState(emptyForm);
+  // ==========================================
+  // LOAD TRANSACTIONS
+  // ==========================================
 
-  const [transactions, setTransactions] =
-    useState([]);
+  const loadTransactions = async () => {
+    try {
+      const response = await api.get("/transactions");
 
-  const [editingId, setEditingId] =
-    useState(null);
+      setTransactions(response.data);
+    } catch (error) {
+      console.error(error);
 
-  const [message, setMessage] =
-    useState("");
-
-
-  // =================================================
-  // LOAD
-  // =================================================
-
-  const loadTransactions =
-    async () => {
-
-      try {
-
-        const response =
-          await api.get(
-            "/transactions"
-          );
-
-        setTransactions(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.error(error);
-
-        setMessage(
-          "Unable to load transactions"
-        );
-      }
-    };
-
+      setMessage("Unable to load transactions");
+    }
+  };
 
   useEffect(() => {
     loadTransactions();
   }, []);
 
-
-  // =================================================
-  // LOGIN
-  // =================================================
+  // ==========================================
+  // LOGIN CHECK
+  // ==========================================
 
   if (!token) {
-
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
-
-  // =================================================
-  // HANDLE CHANGE
-  // =================================================
+  // ==========================================
+  // HANDLE FORM CHANGE
+  // ==========================================
 
   const handleChange = (e) => {
-
-    const {
-      name,
-      value,
-    } = e.target;
-
+    const { name, value } = e.target;
 
     setForm((previous) => ({
-
       ...previous,
-
       [name]: value,
-
-
-      // Switching to income
-      ...(name === "type" &&
-      value === "income"
-        ? {
-            spentBy: "",
-            donorName: "",
-          }
-        : {}),
-
-
-      // Switching to expense
-      ...(name === "type" &&
-      value === "expense"
-        ? {
-            donorName: "",
-          }
-        : {}),
-
-
-      // Switching to pending
-      ...(name === "type" &&
-      value === "pending"
-        ? {
-            spentBy: "",
-            title: "",
-          }
-        : {}),
-
     }));
   };
 
+  // ==========================================
+  // CHANGE TRANSACTION TYPE
+  // ==========================================
 
-  // =================================================
+  const handleTypeChange = (e) => {
+    const type = e.target.value;
+
+    setForm({
+      ...emptyForm,
+      type,
+    });
+
+    setMessage("");
+  };
+
+  // ==========================================
   // SUBMIT
-  // =================================================
+  // ==========================================
 
   const submit = async (e) => {
-
     e.preventDefault();
 
     setMessage("");
 
+    // ------------------------------------------
+    // MONEY SPENT VALIDATION
+    // ------------------------------------------
 
-    // Expense validation
-    if (
-      form.type === "expense" &&
-      !form.spentBy
-    ) {
+    if (form.type === "expense") {
+      if (!form.spentBy) {
+        setMessage("Please select who spent the money.");
+        return;
+      }
 
-      setMessage(
-        "Please select who spent the money."
-      );
+      if (!form.title.trim()) {
+        setMessage("Please enter the purpose.");
+        return;
+      }
+    }
 
+    // ------------------------------------------
+    // MONEY ADDED VALIDATION
+    // ------------------------------------------
+
+    if (form.type === "income") {
+      if (!form.donorName.trim()) {
+        setMessage("Please enter the person name.");
+        return;
+      }
+    }
+
+    // ------------------------------------------
+    // PENDING DONATION VALIDATION
+    // ------------------------------------------
+
+    if (form.type === "pending") {
+      if (!form.donorName.trim()) {
+        setMessage("Please enter the donor name.");
+        return;
+      }
+    }
+
+    if (!form.amount || Number(form.amount) <= 0) {
+      setMessage("Please enter a valid amount.");
       return;
     }
 
-
-    // Pending validation
-    if (
-      form.type === "pending" &&
-      !form.donorName
-    ) {
-
-      setMessage(
-        "Please select donor name."
-      );
-
-      return;
-    }
-
-
-    // Income / Expense purpose
-    if (
-      form.type !== "pending" &&
-      !form.title.trim()
-    ) {
-
-      setMessage(
-        "Please enter the purpose."
-      );
-
-      return;
-    }
-
+    // ==========================================
+    // DATA TO SEND
+    // ==========================================
 
     const data = {
+      type: form.type,
 
-      type:
-        form.type,
+      // For expense:
+      // title = purpose
+      //
+      // For income:
+      // title = person name
+      //
+      // For pending:
+      // title = donor name
 
-      // Pending has automatic title
       title:
-        form.type === "pending"
-          ? "Pending Donation"
-          : form.title,
+        form.type === "expense"
+          ? form.title.trim()
+          : form.donorName.trim(),
 
-      amount:
-        Number(form.amount),
+      amount: Number(form.amount),
 
-      description:
-        form.description,
+      description: form.description.trim(),
 
       spentBy:
         form.type === "expense"
@@ -244,48 +181,50 @@ export default function Admin() {
           : "",
 
       donorName:
-        form.type === "pending"
-          ? form.donorName
+        form.type === "income" || form.type === "pending"
+          ? form.donorName.trim()
           : "",
     };
 
-
     try {
+      // ========================================
+      // UPDATE
+      // ========================================
 
       if (editingId) {
-
         await api.put(
           `/transactions/${editingId}`,
           data,
           authConfig()
         );
 
-        setMessage(
-          "Transaction updated successfully."
-        );
+        setMessage("Transaction updated successfully.");
+      }
 
-      } else {
+      // ========================================
+      // ADD
+      // ========================================
 
+      else {
         await api.post(
           "/transactions",
           data,
           authConfig()
         );
 
-        setMessage(
-          "Transaction added successfully."
-        );
+        setMessage("Transaction added successfully.");
       }
 
+      // Reset form
 
       setForm(emptyForm);
 
       setEditingId(null);
 
+      // Reload transactions
+
       await loadTransactions();
-
     } catch (error) {
-
       console.error(error);
 
       setMessage(
@@ -295,62 +234,49 @@ export default function Admin() {
     }
   };
 
+  // ==========================================
+  // START EDIT
+  // ==========================================
 
-  // =================================================
-  // EDIT
-  // =================================================
+  const startEdit = (transaction) => {
+    setEditingId(transaction._id);
 
-  const startEdit =
-    (transaction) => {
+    setForm({
+      type: transaction.type,
 
-      setEditingId(
-        transaction._id
-      );
+      title:
+        transaction.type === "expense"
+          ? transaction.title || ""
+          : "",
 
+      amount: transaction.amount || "",
 
-      setForm({
+      description:
+        transaction.description || "",
 
-        type:
-          transaction.type,
+      spentBy:
+        transaction.spentBy || "",
 
-        title:
-          transaction.title || "",
+      donorName:
+        transaction.donorName ||
+        (transaction.type !== "expense"
+          ? transaction.title
+          : ""),
+    });
 
-        amount:
-          transaction.amount,
+    setMessage("Editing transaction");
 
-        description:
-          transaction.description ||
-          "",
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
-        spentBy:
-          transaction.spentBy ||
-          "",
-
-        donorName:
-          transaction.donorName ||
-          "",
-      });
-
-
-      setMessage(
-        "Editing transaction"
-      );
-
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    };
-
-
-  // =================================================
-  // CANCEL
-  // =================================================
+  // ==========================================
+  // CANCEL EDIT
+  // ==========================================
 
   const cancelEdit = () => {
-
     setEditingId(null);
 
     setForm(emptyForm);
@@ -358,70 +284,85 @@ export default function Admin() {
     setMessage("");
   };
 
-
-  // =================================================
+  // ==========================================
   // DELETE
-  // =================================================
+  // ==========================================
 
-  const deleteTransaction =
-    async (
-      id,
-      title
-    ) => {
+  const deleteTransaction = async (id, title) => {
+    const confirmed = window.confirm(
+      `Delete "${title}"?`
+    );
 
-      const confirmed =
-        window.confirm(
-          `Delete "${title}"?`
-        );
+    if (!confirmed) {
+      return;
+    }
 
+    try {
+      await api.delete(
+        `/transactions/${id}`,
+        authConfig()
+      );
 
-      if (!confirmed) {
-        return;
+      setMessage(
+        "Transaction deleted successfully."
+      );
+
+      if (editingId === id) {
+        cancelEdit();
       }
 
+      await loadTransactions();
+    } catch (error) {
+      console.error(error);
 
-      try {
+      setMessage(
+        error.response?.data?.message ||
+          "Unable to delete transaction"
+      );
+    }
+  };
 
-        await api.delete(
-          `/transactions/${id}`,
-          authConfig()
-        );
+  // ==========================================
+  // DISPLAY TITLE
+  // ==========================================
 
+  const getTransactionTitle = (transaction) => {
+    if (transaction.type === "expense") {
+      return transaction.title;
+    }
 
-        setMessage(
-          "Transaction deleted successfully."
-        );
+    return (
+      transaction.donorName ||
+      transaction.title ||
+      "Unknown"
+    );
+  };
 
+  // ==========================================
+  // DISPLAY TYPE
+  // ==========================================
 
-        if (editingId === id) {
-          cancelEdit();
-        }
+  const getTransactionType = (type) => {
+    if (type === "income") {
+      return "Money Added";
+    }
 
+    if (type === "pending") {
+      return "Pending Donation";
+    }
 
-        await loadTransactions();
+    return "Money Spent";
+  };
 
-      } catch (error) {
-
-        console.error(error);
-
-        setMessage(
-          error.response?.data?.message ||
-            "Unable to delete transaction"
-        );
-      }
-    };
-
-
-  // =================================================
+  // ==========================================
   // UI
-  // =================================================
+  // ==========================================
 
   return (
     <div>
-
-      {/* ============================================
+      {/* ========================================
           ADMIN FORM
-      ============================================ */}
+      ======================================== */}
 
       <div className="form-card">
 
@@ -431,7 +372,6 @@ export default function Admin() {
             : "Admin Panel"}
         </h1>
 
-
         <p>
           Logged in as{" "}
           <strong>
@@ -439,10 +379,11 @@ export default function Admin() {
           </strong>
         </p>
 
-
         <form onSubmit={submit}>
 
-          {/* TRANSACTION TYPE */}
+          {/* ====================================
+              TRANSACTION TYPE
+          ==================================== */}
 
           <label>
             Transaction Type
@@ -451,9 +392,8 @@ export default function Admin() {
           <select
             name="type"
             value={form.type}
-            onChange={handleChange}
+            onChange={handleTypeChange}
           >
-
             <option value="income">
               Money Added / Collected
             </option>
@@ -465,58 +405,41 @@ export default function Admin() {
             <option value="pending">
               Pending Donation
             </option>
-
           </select>
 
+          {/* ====================================
+              MONEY SPENT
+          ==================================== */}
 
-          {/* ========================================
-              PURPOSE
-              Only for income and expense
-          ======================================== */}
-
-          {form.type !== "pending" && (
+          {form.type === "expense" && (
             <>
-
               <label>
                 Purpose
               </label>
 
               <input
                 name="title"
+                type="text"
                 placeholder="Example: Decorations"
                 value={form.title}
                 onChange={handleChange}
                 required
               />
 
-            </>
-          )}
+              <label>
+                Amount (₹)
+              </label>
 
-
-          {/* AMOUNT */}
-
-          <label>
-            Amount (₹)
-          </label>
-
-          <input
-            name="amount"
-            type="number"
-            min="1"
-            step="0.01"
-            placeholder="Example: 1200"
-            value={form.amount}
-            onChange={handleChange}
-            required
-          />
-
-
-          {/* ========================================
-              SPENT BY
-          ======================================== */}
-
-          {form.type === "expense" && (
-            <>
+              <input
+                name="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Example: 1200"
+                value={form.amount}
+                onChange={handleChange}
+                required
+              />
 
               <label>
                 Spent By
@@ -528,72 +451,97 @@ export default function Admin() {
                 onChange={handleChange}
                 required
               >
-
                 <option value="">
                   Select Person
                 </option>
 
-                {members.map(
-                  (member) => (
-
-                    <option
-                      key={member}
-                      value={member}
-                    >
-                      {member}
-                    </option>
-
-                  )
-                )}
-
+                {members.map((member) => (
+                  <option
+                    key={member}
+                    value={member}
+                  >
+                    {member}
+                  </option>
+                ))}
               </select>
-
             </>
           )}
 
+          {/* ====================================
+              MONEY ADDED / COLLECTED
+          ==================================== */}
 
-          {/* ========================================
-              PENDING DONOR
-          ======================================== */}
+          {form.type === "income" && (
+            <>
+              <label>
+                Person Name
+              </label>
+
+              <input
+                name="donorName"
+                type="text"
+                placeholder="Enter person name"
+                value={form.donorName}
+                onChange={handleChange}
+                required
+              />
+
+              <label>
+                Amount (₹)
+              </label>
+
+              <input
+                name="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Example: 1200"
+                value={form.amount}
+                onChange={handleChange}
+                required
+              />
+            </>
+          )}
+
+          {/* ====================================
+              PENDING DONATION
+          ==================================== */}
 
           {form.type === "pending" && (
             <>
+              <label>
+                Amount (₹)
+              </label>
+
+              <input
+                name="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Example: 1200"
+                value={form.amount}
+                onChange={handleChange}
+                required
+              />
 
               <label>
                 Donor Name
               </label>
 
-              <select
+              <input
                 name="donorName"
+                type="text"
+                placeholder="Enter donor name"
                 value={form.donorName}
                 onChange={handleChange}
                 required
-              >
-
-                <option value="">
-                  Select Person
-                </option>
-
-                {members.map(
-                  (member) => (
-
-                    <option
-                      key={member}
-                      value={member}
-                    >
-                      {member}
-                    </option>
-
-                  )
-                )}
-
-              </select>
-
+              />
             </>
           )}
 
-
-          {/* DESCRIPTION */}
+          {/* ====================================
+              DESCRIPTION
+          ==================================== */}
 
           <label>
             Description (Optional)
@@ -602,21 +550,18 @@ export default function Admin() {
           <textarea
             name="description"
             placeholder="Additional details"
-            value={
-              form.description
-            }
+            value={form.description}
             onChange={handleChange}
           />
 
-
-          {/* MESSAGE */}
+          {/* ====================================
+              MESSAGE
+          ==================================== */}
 
           {message && (
             <p
               className={
-                message.includes(
-                  "successfully"
-                )
+                message.toLowerCase().includes("success")
                   ? "success"
                   : "error"
               }
@@ -625,22 +570,17 @@ export default function Admin() {
             </p>
           )}
 
-
-          {/* SUBMIT */}
+          {/* ====================================
+              BUTTON
+          ==================================== */}
 
           <button type="submit">
-
             {editingId
               ? "Update Transaction"
               : "Add Transaction"}
-
           </button>
 
-
-          {/* CANCEL */}
-
           {editingId && (
-
             <button
               type="button"
               onClick={cancelEdit}
@@ -650,17 +590,14 @@ export default function Admin() {
             >
               Cancel
             </button>
-
           )}
 
         </form>
-
       </div>
 
-
-      {/* ============================================
+      {/* ========================================
           MANAGE TRANSACTIONS
-      ============================================ */}
+      ======================================== */}
 
       <div className="transactions-card">
 
@@ -668,175 +605,135 @@ export default function Admin() {
           Manage Transactions
         </h2>
 
-
         {transactions.length === 0 ? (
-
           <p>
             No transactions yet.
           </p>
-
         ) : (
-
           <div className="transaction-list">
 
-            {transactions.map(
-              (transaction) => (
+            {transactions.map((transaction) => (
+              <div
+                className="transaction-item"
+                key={transaction._id}
+              >
 
-                <div
-                  className="transaction-item"
-                  key={
-                    transaction._id
-                  }
-                >
+                <div>
 
-                  <div>
+                  <strong>
+                    {getTransactionTitle(
+                      transaction
+                    )}
+                  </strong>
 
-                    <strong>
-                      {
-                        transaction.title ||
-                        "Pending Donation"
-                      }
-                    </strong>
+                  <p>
+                    {getTransactionType(
+                      transaction.type
+                    )}{" "}
+                    — ₹
+                    {Number(
+                      transaction.amount
+                    ).toLocaleString("en-IN")}
+                  </p>
 
+                  {/* SPENT BY */}
 
+                  {transaction.type ===
+                    "expense" && (
                     <p>
-
-                      {transaction.type ===
-                      "income"
-                        ? "Money Added"
-                        : transaction.type ===
-                          "expense"
-                        ? "Money Spent"
-                        : "Pending Donation"}
-
-                      {" — ₹"}
-
-                      {Number(
-                        transaction.amount
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
-
+                      Spent by:{" "}
+                      <strong>
+                        {transaction.spentBy ||
+                          "Not specified"}
+                      </strong>
                     </p>
+                  )}
 
+                  {/* DONOR */}
 
-                    {/* SPENT BY */}
-
-                    {transaction.type ===
-                      "expense" && (
-
-                      <p>
-
-                        Spent by:{" "}
-
-                        <strong>
-                          {
-                            transaction.spentBy ||
-                            "Not specified"
-                          }
-                        </strong>
-
-                      </p>
-
-                    )}
-
-
-                    {/* PENDING */}
-
-                    {transaction.type ===
-                      "pending" && (
-
-                      <p>
-
-                        Pending from:{" "}
-
-                        <strong>
-                          {
-                            transaction.donorName ||
-                            "Not specified"
-                          }
-                        </strong>
-
-                      </p>
-
-                    )}
-
-
-                    {/* DESCRIPTION */}
-
-                    {transaction.description && (
-
-                      <p>
-                        {
-                          transaction.description
-                        }
-                      </p>
-
-                    )}
-
-
-                    {/* ADMIN */}
-
-                    <small>
-
-                      Added by:{" "}
-
-                      {
-                        transaction
-                          .addedBy
-                          ?.name ||
-                        "Unknown"
-                      }
-
-                    </small>
-
-                  </div>
-
-
-                  <div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startEdit(
-                          transaction
-                        )
-                      }
-                    >
-                      Edit
-                    </button>
-
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        deleteTransaction(
-                          transaction._id,
+                  {transaction.type ===
+                    "income" && (
+                    <p>
+                      Person:{" "}
+                      <strong>
+                        {transaction.donorName ||
                           transaction.title ||
-                            "Pending Donation"
-                        )
-                      }
-                      style={{
-                        marginLeft:
-                          "10px",
-                      }}
-                    >
-                      Delete
-                    </button>
+                          "Not specified"}
+                      </strong>
+                    </p>
+                  )}
 
-                  </div>
+                  {/* PENDING DONOR */}
+
+                  {transaction.type ===
+                    "pending" && (
+                    <p>
+                      Donor:{" "}
+                      <strong>
+                        {transaction.donorName ||
+                          transaction.title ||
+                          "Not specified"}
+                      </strong>
+                    </p>
+                  )}
+
+                  {/* DESCRIPTION */}
+
+                  {transaction.description && (
+                    <p>
+                      {transaction.description}
+                    </p>
+                  )}
+
+                  {/* ADDED BY */}
+
+                  <small>
+                    Added by:{" "}
+                    {transaction.addedBy?.name ||
+                      "Unknown"}
+                  </small>
 
                 </div>
 
-              )
-            )}
+                {/* BUTTONS */}
+
+                <div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      startEdit(transaction)
+                    }
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      deleteTransaction(
+                        transaction._id,
+                        getTransactionTitle(
+                          transaction
+                        )
+                      )
+                    }
+                    style={{
+                      marginLeft: "10px",
+                    }}
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </div>
+            ))}
 
           </div>
-
         )}
 
       </div>
-
     </div>
   );
 }

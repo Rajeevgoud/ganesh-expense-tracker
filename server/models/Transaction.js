@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -10,7 +10,7 @@ const transactionSchema = new mongoose.Schema(
 
     title: {
       type: String,
-      default: "",
+      required: true,
       trim: true,
     },
 
@@ -23,24 +23,20 @@ const transactionSchema = new mongoose.Schema(
     description: {
       type: String,
       default: "",
-      trim: true,
     },
 
-    // Person who spent the money
     spentBy: {
       type: String,
       default: "",
       trim: true,
     },
 
-    // Person who has not yet donated
     donorName: {
       type: String,
       default: "",
       trim: true,
     },
 
-    // Admin who added the transaction
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -52,7 +48,7 @@ const transactionSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model(
+export default mongoose.model(
   "Transaction",
   transactionSchema
 );
