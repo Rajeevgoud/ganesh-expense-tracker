@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -23,15 +23,17 @@ const transactionSchema = new mongoose.Schema(
     description: {
       type: String,
       default: "",
+      trim: true,
     },
 
-    // IMPORTANT: Person who spent the money
+    // Person who actually spent the money
     spentBy: {
       type: String,
       default: "",
       trim: true,
     },
 
+    // Admin who entered the transaction
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -43,4 +45,4 @@ const transactionSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("Transaction", transactionSchema);
+module.exports = mongoose.model("Transaction", transactionSchema);
