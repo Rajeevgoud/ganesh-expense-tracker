@@ -20,6 +20,10 @@ export default function Navbar() {
     }
   }, [darkMode]);
 
+  const toggleTheme = () => {
+    setDarkMode((previous) => !previous);
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -28,34 +32,53 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
+
       <Link to="/" className="brand">
         🙏 Ganesh Expense Tracker
       </Link>
 
       <div className="nav-links">
-        <Link to="/">Dashboard</Link>
+
+        <Link to="/">
+          Dashboard
+        </Link>
 
         {user ? (
           <>
-            <Link to="/admin">Admin Panel</Link>
+            <Link to="/admin">
+              Admin Panel
+            </Link>
 
             <button onClick={logout}>
               Logout ({user.name})
             </button>
           </>
         ) : (
-          <Link to="/login">Admin Login</Link>
+          <Link to="/login">
+            Admin Login
+          </Link>
         )}
 
         {/* Dark / Morning Mode */}
         <button
           className="theme-toggle-navbar"
-          onClick={() => setDarkMode((prev) => !prev)}
-          title={darkMode ? "Switch to Morning Mode" : "Switch to Night Mode"}
+          onClick={toggleTheme}
+          title={
+            darkMode
+              ? "Switch to Morning Mode"
+              : "Switch to Night Mode"
+          }
+          aria-label={
+            darkMode
+              ? "Switch to Morning Mode"
+              : "Switch to Night Mode"
+          }
         >
           {darkMode ? "☀️" : "🌙"}
         </button>
+
       </div>
+
     </nav>
   );
 }

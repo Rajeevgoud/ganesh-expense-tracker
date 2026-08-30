@@ -1,40 +1,259 @@
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; background: #f6f7fb; color: #222; }
-.navbar { min-height: 64px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; gap: 20px; }
-.brand { font-weight: 700; color: #222; text-decoration: none; }
-.nav-links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.nav-links a { color: #333; text-decoration: none; }
-button { border: 0; border-radius: 8px; padding: 11px 16px; cursor: pointer; font-size: 15px; background: #222; color: white; }
-.container { width: min(1100px, 92%); margin: 28px auto; }
-.hero { text-align: center; margin-bottom: 25px; }
-.hero h1 { margin-bottom: 8px; }
-.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-.card, .panel, .form-card { background: white; border: 1px solid #e2e2e2; border-radius: 12px; padding: 20px; }
-.card span { display: block; color: #666; margin-bottom: 8px; }
-.card strong { font-size: 26px; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-th { white-space: nowrap; }
-.badge { padding: 5px 8px; border-radius: 20px; font-size: 12px; background: #eee; }
-.income { background: #dff4e5; }
-.expense { background: #fde3e3; }
-.form-card { max-width: 650px; margin: 30px auto; }
-.form-card.small { max-width: 450px; }
-form { display: flex; flex-direction: column; gap: 10px; }
-label { font-weight: 600; margin-top: 5px; }
-input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-textarea { min-height: 90px; resize: vertical; }
-.error { color: #b00020; }
-.success { color: #137333; }
-@media (max-width: 700px) {
-  .navbar { padding: 12px 4%; flex-direction: column; align-items: flex-start; }
-  .cards { grid-template-columns: 1fr; }
+/* =====================================================
+   RESET
+   ===================================================== */
+
+* {
+  box-sizing: border-box;
 }
 
-/* =========================================
-   DARK MODE BUTTON
-   ========================================= */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f6f7fb;
+  color: #222;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+
+/* =====================================================
+   NAVBAR
+   ===================================================== */
+
+.navbar {
+  min-height: 64px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 5%;
+  gap: 20px;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.brand {
+  font-weight: 700;
+  color: #222;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nav-links a {
+  color: #333;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 16px;
+
+  cursor: pointer;
+  font-size: 15px;
+
+  background: #222;
+  color: white;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+button:hover {
+  background: #333;
+}
+
+
+/* =====================================================
+   MAIN CONTAINER
+   ===================================================== */
+
+.container {
+  width: min(1100px, 92%);
+  margin: 28px auto;
+}
+
+
+/* =====================================================
+   HERO
+   ===================================================== */
+
+.hero {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.hero h1 {
+  margin-bottom: 8px;
+}
+
+
+/* =====================================================
+   SUMMARY CARDS
+   ===================================================== */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card,
+.panel,
+.form-card {
+  background: white;
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  padding: 20px;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card span {
+  display: block;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.card strong {
+  font-size: 26px;
+}
+
+
+/* =====================================================
+   TABLE
+   ===================================================== */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  white-space: nowrap;
+}
+
+
+/* =====================================================
+   BADGES
+   ===================================================== */
+
+.badge {
+  padding: 5px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  background: #eee;
+}
+
+.income {
+  background: #dff4e5;
+}
+
+.expense {
+  background: #fde3e3;
+}
+
+
+/* =====================================================
+   FORMS
+   ===================================================== */
+
+.form-card {
+  max-width: 650px;
+  margin: 30px auto;
+}
+
+.form-card.small {
+  max-width: 450px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+
+  border: 1px solid #ccc;
+  border-radius: 8px;
+
+  font-size: 15px;
+
+  background: #fff;
+  color: #222;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.error {
+  color: #b00020;
+}
+
+.success {
+  color: #137333;
+}
+
+
+/* =====================================================
+   DARK / NIGHT MODE BUTTON
+   ===================================================== */
 
 .theme-toggle-navbar {
   width: 38px;
@@ -44,6 +263,7 @@ textarea { min-height: 90px; resize: vertical; }
   margin-left: 8px;
 
   border-radius: 50%;
+
   border: 1px solid #ddd;
 
   background: #fff;
@@ -57,81 +277,215 @@ textarea { min-height: 90px; resize: vertical; }
 
   cursor: pointer;
 
-  transition: all 0.2s ease;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s ease;
 }
 
 .theme-toggle-navbar:hover {
   transform: scale(1.08);
 }
 
-/* =========================================
+
+/* =====================================================
    NIGHT MODE
-   ========================================= */
+   ===================================================== */
 
 body.dark-mode {
   background: #121212;
   color: #f5f5f5;
 }
 
+
+/* =====================================================
+   NIGHT MODE - NAVBAR
+   ===================================================== */
+
+body.dark-mode .navbar {
+  background: #181818;
+  color: #fff;
+  border-bottom-color: #333;
+}
+
+body.dark-mode .brand {
+  color: #fff;
+}
+
+body.dark-mode .nav-links a {
+  color: #fff;
+}
+
+
+/* =====================================================
+   NIGHT MODE - THEME BUTTON
+   ===================================================== */
+
 body.dark-mode .theme-toggle-navbar {
-  background: #222;
+  background: #242424;
   color: #fff;
   border-color: #555;
 }
 
-/* Keep navbar */
-body.dark-mode .navbar {
-  background: #181818;
-  color: #fff;
-  border-color: #333;
-}
 
-body.dark-mode .navbar a {
-  color: #fff;
-}
+/* =====================================================
+   NIGHT MODE - CARDS
+   ===================================================== */
 
-/* Main cards */
 body.dark-mode .card,
-body.dark-mode .section,
-body.dark-mode .filter-section,
-body.dark-mode .transaction-section {
+body.dark-mode .panel,
+body.dark-mode .form-card {
   background: #1e1e1e;
-  color: #fff;
+  color: #f5f5f5;
   border-color: #333;
 }
 
-/* Inputs */
+
+/* Card secondary text */
+
+body.dark-mode .card span {
+  color: #bdbdbd;
+}
+
+
+/* =====================================================
+   NIGHT MODE - TEXT
+   ===================================================== */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark-mode p,
+body.dark-mode label,
+body.dark-mode span {
+  color: inherit;
+}
+
+
+/* =====================================================
+   NIGHT MODE - INPUTS
+   ===================================================== */
+
 body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea {
-  background: #1e1e1e;
+  background: #222;
   color: #fff;
   border-color: #555;
 }
 
 body.dark-mode input::placeholder,
 body.dark-mode textarea::placeholder {
-  color: #aaa;
+  color: #999;
 }
 
-/* Tables */
+body.dark-mode option {
+  background: #222;
+  color: #fff;
+}
+
+
+/* =====================================================
+   NIGHT MODE - TABLE
+   ===================================================== */
+
 body.dark-mode table {
   background: #1e1e1e;
   color: #fff;
 }
 
-body.dark-mode th,
+body.dark-mode thead {
+  background: #252525;
+}
+
+body.dark-mode th {
+  background: #252525;
+  color: #fff;
+  border-bottom-color: #444;
+}
+
 body.dark-mode td {
+  background: #1e1e1e;
   color: #fff;
-  border-color: #444;
+  border-bottom-color: #333;
 }
 
-/* Buttons */
+body.dark-mode tr {
+  background: #1e1e1e;
+}
+
+
+/* =====================================================
+   NIGHT MODE - BADGES
+   ===================================================== */
+
+body.dark-mode .badge {
+  background: #333;
+  color: #fff;
+}
+
+body.dark-mode .income {
+  background: #245c3a;
+  color: #fff;
+}
+
+body.dark-mode .expense {
+  background: #642f2f;
+  color: #fff;
+}
+
+
+/* =====================================================
+   NIGHT MODE - BUTTONS
+   ===================================================== */
+
 body.dark-mode button {
+  background: #292929;
   color: #fff;
+  border-color: #555;
 }
 
-/* Links */
+body.dark-mode button:hover {
+  background: #3a3a3a;
+}
+
+
+/* =====================================================
+   NIGHT MODE - LINKS
+   ===================================================== */
+
 body.dark-mode a {
   color: #fff;
+}
+
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 700px) {
+
+  .navbar {
+    padding: 12px 4%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    width: 94%;
+  }
+
 }
