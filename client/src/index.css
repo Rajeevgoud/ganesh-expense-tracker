@@ -489,3 +489,17 @@ body.dark-mode a {
   }
 
 }
+/* =====================================================
+   TOTAL SPENT BOX - NIGHT MODE FIX
+   ===================================================== */
+
+body.dark-mode .total-spent-box {
+  background: #242424 !important;
+  color: #fff !important;
+  border: 1px solid #333 !important;
+}
+
+body.dark-mode .total-spent-box span,
+body.dark-mode .total-spent-box h2 {
+  color: #fff !important;
+}

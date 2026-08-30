@@ -439,13 +439,13 @@ export default function Dashboard() {
         </select>
 
         <div
-          style={{
-            marginTop: "20px",
-            padding: "20px",
-            background: "#f5f5f5",
-            borderRadius: "12px",
-          }}
-        >
+  className="total-spent-box"
+  style={{
+    marginTop: "20px",
+    padding: "20px",
+    borderRadius: "12px",
+  }}
+>
           <span>
             {selectedPerson === "all"
               ? "Total Spent by Everyone"
