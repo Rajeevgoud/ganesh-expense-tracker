@@ -1,17 +1,17 @@
 import axios from "axios";
 
-export const API_URL = "https://ganesh-expense-tracker.onrender.com/api";
-
 export const api = axios.create({
-  baseURL: API_URL
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:5000/api",
 });
 
-export function authConfig() {
+export const authConfig = () => {
   const token = localStorage.getItem("token");
 
   return {
     headers: {
-      Authorization: `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   };
-}
+};
