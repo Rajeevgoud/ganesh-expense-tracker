@@ -1,40 +1,66 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: #f6f7fb; color: #222; }
+.navbar { min-height: 64px; background: #fff; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; gap: 20px; }
+.brand { font-weight: 700; color: #222; text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.nav-links a { color: #333; text-decoration: none; }
+button { border: 0; border-radius: 8px; padding: 11px 16px; cursor: pointer; font-size: 15px; background: #222; color: white; }
+.container { width: min(1100px, 92%); margin: 28px auto; }
+.hero { text-align: center; margin-bottom: 25px; }
+.hero h1 { margin-bottom: 8px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.card, .panel, .form-card { background: white; border: 1px solid #e2e2e2; border-radius: 12px; padding: 20px; }
+.card span { display: block; color: #666; margin-bottom: 8px; }
+.card strong { font-size: 26px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+th { white-space: nowrap; }
+.badge { padding: 5px 8px; border-radius: 20px; font-size: 12px; background: #eee; }
+.income { background: #dff4e5; }
+.expense { background: #fde3e3; }
+.form-card { max-width: 650px; margin: 30px auto; }
+.form-card.small { max-width: 450px; }
+form { display: flex; flex-direction: column; gap: 10px; }
+label { font-weight: 600; margin-top: 5px; }
+input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+textarea { min-height: 90px; resize: vertical; }
+.error { color: #b00020; }
+.success { color: #137333; }
+@media (max-width: 700px) {
+  .navbar { padding: 12px 4%; flex-direction: column; align-items: flex-start; }
+  .cards { grid-template-columns: 1fr; }
+}
+
 /* =========================================
-   DARK / MORNING MODE
+   DARK MODE BUTTON
    ========================================= */
 
-/* Small theme button */
-.theme-toggle {
-  position: fixed;
-  top: 145px;
-  right: 24px;
+.theme-toggle-navbar {
+  width: 38px;
+  height: 38px;
 
-  width: 44px;
-  height: 44px;
+  padding: 0;
+  margin-left: 8px;
 
   border-radius: 50%;
   border: 1px solid #ddd;
 
-  background: #ffffff;
+  background: #fff;
   color: #222;
 
-  font-size: 20px;
-  cursor: pointer;
+  font-size: 18px;
 
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
 
-  z-index: 9999;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.theme-toggle:hover {
+.theme-toggle-navbar:hover {
   transform: scale(1.08);
 }
 
@@ -47,28 +73,30 @@ body.dark-mode {
   color: #f5f5f5;
 }
 
-body.dark-mode .theme-toggle {
+body.dark-mode .theme-toggle-navbar {
   background: #222;
   color: #fff;
-  border-color: #444;
+  border-color: #555;
 }
 
-/* Main containers/cards */
-body.dark-mode .container {
-  color: #f5f5f5;
+/* Keep navbar */
+body.dark-mode .navbar {
+  background: #181818;
+  color: #fff;
+  border-color: #333;
 }
 
-body.dark-mode .container > * {
-  color: #f5f5f5;
+body.dark-mode .navbar a {
+  color: #fff;
 }
 
-/* Cards */
+/* Main cards */
 body.dark-mode .card,
 body.dark-mode .section,
 body.dark-mode .filter-section,
 body.dark-mode .transaction-section {
   background: #1e1e1e;
-  color: #f5f5f5;
+  color: #fff;
   border-color: #333;
 }
 
@@ -78,7 +106,7 @@ body.dark-mode select,
 body.dark-mode textarea {
   background: #1e1e1e;
   color: #fff;
-  border-color: #444;
+  border-color: #555;
 }
 
 body.dark-mode input::placeholder,
@@ -98,23 +126,12 @@ body.dark-mode td {
   border-color: #444;
 }
 
-/* Links */
-body.dark-mode a {
-  color: #ddd;
+/* Buttons */
+body.dark-mode button {
+  color: #fff;
 }
 
-/* =========================================
-   MOBILE
-   ========================================= */
-
-@media (max-width: 600px) {
-  .theme-toggle {
-    top: 115px;
-    right: 15px;
-
-    width: 40px;
-    height: 40px;
-
-    font-size: 18px;
-  }
+/* Links */
+body.dark-mode a {
+  color: #fff;
 }
